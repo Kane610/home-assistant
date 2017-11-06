@@ -269,8 +269,7 @@ def setup_device(hass, config, device_config):
                                     config)
 
     AXIS_DEVICES[device.serial_number] = device
-    if event_types:
-        hass.add_job(device.start)
+    hass.add_job(device.start)
     return True
 
 

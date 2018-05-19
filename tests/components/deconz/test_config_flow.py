@@ -52,7 +52,8 @@ async def test_flow_no_discovered_bridges(hass, aioclient_mock):
     flow.hass = hass
 
     result = await flow.async_step_init()
-    assert result['type'] == 'abort'
+    assert result['type'] == 'form'
+    assert result['step_id'] == 'init'
 
 
 async def test_flow_one_bridge_discovered(hass, aioclient_mock):
@@ -86,6 +87,20 @@ async def test_flow_two_bridges_discovered(hass, aioclient_mock):
 
     result['data_schema']({'host': '1.2.3.4'})
     result['data_schema']({'host': '5.6.7.8'})
+
+
+async def test_flow_manual_input(hass):
+    """Test config flow with manual input to discover no bridges."""
+    flow = config_flow.DeconzFlowHandler()
+    flow.hass = hass
+
+    result = await flow.async_step_init({'host': '1.2.3.4', 'port': 80})
+    assert result['type'] == 'form'
+    assert result['step_id'] == 'link'
+    assert flow.deconz_config == {
+        'host': '1.2.3.4',
+        'port': 80,
+    }
 
 
 async def test_link_no_api_key(hass, aioclient_mock):

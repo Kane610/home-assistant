@@ -41,6 +41,11 @@ class DeconzFlowHandler(data_entry_flow.FlowHandler):
                 if bridge[CONF_HOST] == user_input[CONF_HOST]:
                     self.deconz_config = bridge
                     return await self.async_step_link()
+                return self.async_abort(
+                    reason='no_bridges'
+                )
+            self.deconz_config = user_input
+            return await self.async_step_link()
 
         session = aiohttp_client.async_get_clientsession(self.hass)
         self.bridges = await async_discovery(session)
@@ -58,9 +63,12 @@ class DeconzFlowHandler(data_entry_flow.FlowHandler):
                     vol.Required(CONF_HOST): vol.In(hosts)
                 })
             )
-
-        return self.async_abort(
-            reason='no_bridges'
+        return self.async_show_form(
+            step_id='init',
+            data_schema=vol.Schema({
+                vol.Required(CONF_HOST): str,
+                vol.Optional(CONF_PORT): vol.Coerce(int),
+            }),
         )
 
     async def async_step_link(self, user_input=None):

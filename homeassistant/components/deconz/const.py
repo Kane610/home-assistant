@@ -74,5 +74,8 @@ POWER_PLUGS = ["On/Off light", "On/Off plug-in unit", "Smart plug"]
 SIRENS = ["Warning device"]
 SWITCH_TYPES = POWER_PLUGS + SIRENS
 
+# Events
+CONF_DECONZ_EVENT = "deconz_event"
+CONF_DECONZ_ALARM_EVENT = "deconz_alarm_event"
 CONF_ANGLE = "angle"
 CONF_GESTURE = "gesture"

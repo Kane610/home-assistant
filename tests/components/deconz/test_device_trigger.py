@@ -29,6 +29,21 @@ from tests.common import (
 )
 from tests.components.blueprint.conftest import stub_blueprint_populate  # noqa: F401
 
+BUTTON_MAP = {
+    "TRADFRI on/off switch": {
+        "buttons": {"1": {"name": "On"}, "2": {"name": "Off"}},
+        "type": "int32",
+        "values": {
+            "1001": {"action": "HOLD", "button": 1},
+            "1002": {"action": "SHORT_RELEASE", "button": 1},
+            "1003": {"action": "LONG_RELEASE", "button": 1},
+            "2001": {"action": "HOLD", "button": 2},
+            "2002": {"action": "SHORT_RELEASE", "button": 2},
+            "2003": {"action": "LONG_RELEASE", "button": 2},
+        },
+    },
+}
+
 
 @pytest.fixture
 def automation_calls(hass):
@@ -36,8 +51,9 @@ def automation_calls(hass):
     return async_mock_service(hass, "test", "automation")
 
 
-async def test_get_triggers(hass, aioclient_mock):
+async def test_get_triggers(hass, aioclient_mock, mock_deconz_read_button_maps):
     """Test triggers work."""
+    mock_deconz_read_button_maps(BUTTON_MAP)
     data = {
         "sensors": {
             "1": {
@@ -125,8 +141,10 @@ async def test_get_triggers(hass, aioclient_mock):
 
     assert_lists_same(triggers, expected_triggers)
 
+    assert 0
 
-async def test_get_triggers_manage_unsupported_remotes(hass, aioclient_mock):
+
+async def test_get_trigger_manage_unsupported_remotes(hass, aioclient_mock):
     """Verify no triggers for an unsupported remote."""
     data = {
         "sensors": {

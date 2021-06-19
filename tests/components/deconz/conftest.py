@@ -31,7 +31,7 @@ def mock_deconz_websocket():
 
 @pytest.fixture(autouse=True)
 def mock_deconz_read_button_maps():
-    """No real websocket allowed."""
+    """No real request for reading button maps."""
     with patch("pydeconz.gateway.Devices.introspect_button_event") as mock:
 
         mock.return_value = {}

@@ -1,4 +1,5 @@
 """Provides device automations for deconz events."""
+
 import voluptuous as vol
 
 from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
@@ -15,8 +16,7 @@ from homeassistant.const import (
     CONF_UNIQUE_ID,
 )
 
-from . import DOMAIN
-from .deconz_event import CONF_DECONZ_EVENT, CONF_GESTURE
+from .const import CONF_DECONZ_EVENT, CONF_GESTURE, DOMAIN
 
 CONF_SUBTYPE = "subtype"
 
@@ -584,6 +584,30 @@ REMOTES = {
 TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
     {vol.Required(CONF_TYPE): str, vol.Required(CONF_SUBTYPE): str}
 )
+
+
+async def load_button_events(gateway):
+    """Load supported button events."""
+    if "deconz_button_maps" not in gateway.hass.data:
+        gateway.hass.data["deconz_button_maps"] = {}
+
+    remotes = {
+        sensor.modelid: sensor.uniqueid
+        for sensor in gateway.api.sensors.values()
+        if sensor.type == "ZHASwitch"
+        and sensor.modelid not in gateway.hass.data["deconz_button_maps"]
+    }
+
+    button_events = await gateway.api.devices.introspect_button_event(remotes)
+
+    button_map = button_events.get("TRADFRI on/off switch", {})
+
+    for event, attributes in button_map.get("values", {}).items():
+        subtype = button_map["buttons"][str(attributes["button"])]["name"]
+        type = attributes["action"]
+        print(event, subtype, type)
+
+    # gateway.hass.data["deconz_button_maps"] = button_maps
 
 
 def _get_deconz_event_from_device_id(hass, device_id):

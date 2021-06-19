@@ -25,11 +25,15 @@ from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.util import slugify
 
-from .const import CONF_ANGLE, CONF_GESTURE, LOGGER, NEW_SENSOR
+from .const import (
+    CONF_ANGLE,
+    CONF_DECONZ_ALARM_EVENT,
+    CONF_DECONZ_EVENT,
+    CONF_GESTURE,
+    LOGGER,
+    NEW_SENSOR,
+)
 from .deconz_device import DeconzBase
-
-CONF_DECONZ_EVENT = "deconz_event"
-CONF_DECONZ_ALARM_EVENT = "deconz_alarm_event"
 
 DECONZ_TO_ALARM_STATE = {
     ANCILLARY_CONTROL_ARMED_AWAY: STATE_ALARM_ARMED_AWAY,

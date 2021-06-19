@@ -53,6 +53,7 @@ class DeconzGateway:
         self.deconz_ids = {}
         self.entities = {}
         self.events = []
+        self.button_maps = {}
 
     @property
     def bridgeid(self) -> str:
@@ -159,6 +160,15 @@ class DeconzGateway:
             via_device=(CONNECTION_NETWORK_MAC, self.api.config.mac),
         )
 
+    async def async_read_button_maps(self) -> None:
+        """Return button maps for paired remotes."""
+        remotes = {
+            sensor.modelid: sensor.uniqueid
+            for sensor in self.api.sensors.values()
+            if sensor.type == "ZHASwitch"
+        }
+        self.button_maps = await self.api.devices.introspect_button_event(remotes)
+
     async def async_setup(self) -> bool:
         """Set up a deCONZ gateway."""
         try:
@@ -177,6 +187,7 @@ class DeconzGateway:
 
         self.hass.config_entries.async_setup_platforms(self.config_entry, PLATFORMS)
 
+        await self.async_read_button_maps()
         await async_setup_events(self)
 
         self.api.start()

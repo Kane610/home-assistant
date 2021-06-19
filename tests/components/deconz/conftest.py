@@ -27,3 +27,17 @@ def mock_deconz_websocket():
                 raise NotImplementedError
 
         yield make_websocket_call
+
+
+@pytest.fixture(autouse=True)
+def mock_deconz_read_button_maps():
+    """No real websocket allowed."""
+    with patch("pydeconz.gateway.Devices.introspect_button_event") as mock:
+
+        mock.return_value = {}
+
+        def set_button_map(button_map: dict) -> None:
+            """Set button map to return."""
+            mock.return_value = button_map
+
+        yield set_button_map

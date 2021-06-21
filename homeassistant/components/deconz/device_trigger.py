@@ -543,7 +543,7 @@ REMOTES = {
     FRIENDS_OF_HUE_SWITCH_MODEL: FRIENDS_OF_HUE_SWITCH,
     STYRBAR_REMOTE_MODEL: STYRBAR_REMOTE,
     SYMFONISK_SOUND_CONTROLLER_MODEL: SYMFONISK_SOUND_CONTROLLER,
-    TRADFRI_ON_OFF_SWITCH_MODEL: TRADFRI_ON_OFF_SWITCH,
+    # TRADFRI_ON_OFF_SWITCH_MODEL: TRADFRI_ON_OFF_SWITCH,
     TRADFRI_OPEN_CLOSE_REMOTE_MODEL: TRADFRI_OPEN_CLOSE_REMOTE,
     TRADFRI_REMOTE_MODEL: TRADFRI_REMOTE,
     TRADFRI_SHORTCUT_REMOTE_MODEL: TRADFRI_SHORTCUT_REMOTE,
@@ -586,6 +586,17 @@ TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
 )
 
 
+BUTTON_NAME_TO_SUBTYPE = {
+    "On": CONF_TURN_ON,
+    "Off": CONF_TURN_OFF,
+}
+BUTTON_ACTION_TO_TYPE = {
+    "SHORT_RELEASE": CONF_SHORT_PRESS,
+    "HOLD": CONF_LONG_PRESS,
+    "LONG_RELEASE": CONF_LONG_RELEASE,
+}
+
+
 async def load_button_events(gateway):
     """Load supported button events."""
     if "deconz_button_maps" not in gateway.hass.data:
@@ -602,12 +613,29 @@ async def load_button_events(gateway):
 
     button_map = button_events.get("TRADFRI on/off switch", {})
 
-    for event, attributes in button_map.get("values", {}).items():
-        subtype = button_map["buttons"][str(attributes["button"])]["name"]
-        type = attributes["action"]
-        print(event, subtype, type)
+    for model_id, button_event in button_events.items():
+        button_map = {}
 
-    # gateway.hass.data["deconz_button_maps"] = button_maps
+        for event, attributes in button_event.get("values", {}).items():
+            button_name = button_event["buttons"][str(attributes["button"])]["name"]
+            subtype = BUTTON_NAME_TO_SUBTYPE.get(button_name)
+
+            action = attributes["action"]
+            type = BUTTON_ACTION_TO_TYPE.get(action)
+
+            button_map[(type, subtype)] = {CONF_EVENT: int(event)}
+
+        if button_map:
+            gateway.hass.data["deconz_button_maps"][model_id] = button_map
+
+
+def _get_remote(hass, model_id: str) -> dict:  # get button map?
+    """Get button map for remote matching model_id."""
+    if remote := hass.data["deconz_button_maps"].get(model_id):
+        return remote
+    if remote := REMOTES.get(model_id):
+        return remote
+    return {}
 
 
 def _get_deconz_event_from_device_id(hass, device_id):
@@ -637,7 +665,7 @@ async def async_validate_trigger_config(hass, config):
             f"{config[CONF_DEVICE_ID]} not found"
         )
 
-    if device.model not in REMOTES or trigger not in REMOTES[device.model]:
+    if not (remote := _get_remote(hass, device.model)) or trigger not in remote:
         raise InvalidDeviceAutomationConfig(
             f"deCONZ trigger {trigger} is not valid for device "
             f"{device} ({config[CONF_DEVICE_ID]})"
@@ -651,22 +679,19 @@ async def async_attach_trigger(hass, config, action, automation_info):
     device_registry = await hass.helpers.device_registry.async_get_registry()
     device = device_registry.async_get(config[CONF_DEVICE_ID])
 
-    trigger = (config[CONF_TYPE], config[CONF_SUBTYPE])
-
-    trigger = REMOTES[device.model][trigger]
-
     deconz_event = _get_deconz_event_from_device_id(hass, device.id)
     if deconz_event is None:
         raise InvalidDeviceAutomationConfig(
             f'No deconz_event tied to device "{device.name}" found'
         )
 
-    event_id = deconz_event.serial
+    trigger_key = (config[CONF_TYPE], config[CONF_SUBTYPE])
+    trigger = _get_remote(hass, device.model)[trigger_key]
 
     event_config = {
         event_trigger.CONF_PLATFORM: "event",
         event_trigger.CONF_EVENT_TYPE: CONF_DECONZ_EVENT,
-        event_trigger.CONF_EVENT_DATA: {CONF_UNIQUE_ID: event_id, **trigger},
+        event_trigger.CONF_EVENT_DATA: {CONF_UNIQUE_ID: deconz_event.serial, **trigger},
     }
 
     event_config = event_trigger.TRIGGER_SCHEMA(event_config)
@@ -685,11 +710,11 @@ async def async_get_triggers(hass, device_id):
     device_registry = await hass.helpers.device_registry.async_get_registry()
     device = device_registry.async_get(device_id)
 
-    if device.model not in REMOTES:
+    if not (remote := _get_remote(hass, device.model)):
         return
 
     triggers = []
-    for trigger, subtype in REMOTES[device.model].keys():
+    for trigger, subtype in remote:
         triggers.append(
             {
                 CONF_DEVICE_ID: device_id,

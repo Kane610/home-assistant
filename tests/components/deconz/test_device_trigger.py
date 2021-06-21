@@ -141,8 +141,6 @@ async def test_get_triggers(hass, aioclient_mock, mock_deconz_read_button_maps):
 
     assert_lists_same(triggers, expected_triggers)
 
-    assert 0
-
 
 async def test_get_trigger_manage_unsupported_remotes(hass, aioclient_mock):
     """Verify no triggers for an unsupported remote."""
@@ -184,10 +182,16 @@ async def test_get_trigger_manage_unsupported_remotes(hass, aioclient_mock):
 
 
 async def test_functional_device_trigger(
-    hass, aioclient_mock, mock_deconz_websocket, automation_calls
+    hass,
+    aioclient_mock,
+    mock_deconz_read_button_maps,
+    mock_deconz_websocket,
+    automation_calls,
 ):
     """Test proper matching and attachment of device trigger automation."""
     await async_setup_component(hass, "persistent_notification", {})
+
+    mock_deconz_read_button_maps(BUTTON_MAP)
 
     data = {
         "sensors": {
@@ -371,9 +375,11 @@ async def test_validate_trigger_unsupported_trigger(
 
 
 async def test_attach_trigger_no_matching_event(
-    hass, aioclient_mock, mock_deconz_websocket
+    hass, aioclient_mock, mock_deconz_read_button_maps, mock_deconz_websocket
 ):
     """Test no matching event for device doesn't return a trigger config."""
+    mock_deconz_read_button_maps(BUTTON_MAP)
+
     config_entry = await setup_deconz_integration(hass, aioclient_mock)
 
     device_registry = await hass.helpers.device_registry.async_get_registry()

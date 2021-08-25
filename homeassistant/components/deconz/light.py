@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import voluptuous as vol
+
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP,
@@ -25,6 +27,8 @@ from homeassistant.components.light import (
     LightEntity,
 )
 from homeassistant.core import callback
+from homeassistant.helpers import entity_platform
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.util.color import color_hs_to_xy
 
@@ -42,6 +46,14 @@ from .gateway import get_gateway_from_config_entry
 CONTROLLER = ["Configuration tool"]
 DECONZ_GROUP = "is_deconz_group"
 
+SERVICE_LIGHT_ON_TIME = "light_on_with_timed_off"
+CONF_LIGHT_ON_TIME = "on_time"
+SERVICE_LIGHT_ON_TIME_SCHEMA = {
+    vol.Required(CONF_LIGHT_ON_TIME): vol.All(
+        cv.positive_float, vol.Clamp(min=0, max=6553)
+    ),
+}
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the deCONZ lights and groups from a config entry."""
@@ -49,6 +61,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     gateway.entities[DOMAIN] = set()
 
     other_light_resource_types = CONTROLLER + COVER_TYPES + LOCK_TYPES + SWITCH_TYPES
+
+    platform = entity_platform.async_get_current_platform()
 
     @callback
     def async_add_light(lights=gateway.api.lights.values()):
@@ -63,6 +77,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 entities.append(DeconzLight(light, gateway))
 
         if entities:
+            platform.async_register_entity_service(
+                SERVICE_LIGHT_ON_TIME,
+                SERVICE_LIGHT_ON_TIME_SCHEMA,
+                "async_set_on_time",
+            )
+
             async_add_entities(entities)
 
     config_entry.async_on_unload(
@@ -239,6 +259,11 @@ class DeconzBaseLight(DeconzDevice, LightEntity):
                 data["alert"] = "lselect"
                 del data["on"]
 
+        await self._device.async_set_state(data)
+
+    async def async_set_on_time(self, on_time: float) -> None:
+        """Send panel_state command."""
+        data = {"on": True, "ontime": int(on_time * 10)}
         await self._device.async_set_state(data)
 
     @property

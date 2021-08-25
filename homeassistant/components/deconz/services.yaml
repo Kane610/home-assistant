@@ -63,3 +63,22 @@ remove_orphaned_entries:
       example: "00212EFFFF012345"
       selector:
         text:
+
+light_on_with_timed_off:
+  name: Light on with timed off
+  description: Turn on light (or deCONZ group) with an off timer. Not supported by all lights.
+  target:
+    entity:
+      integration: deconz
+      domain: light
+  fields:
+    on_time:
+      name: "On timer"
+      description: Positive float with a resolution of 0.1 seconds
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 6553
+          mode: box
+          unit_of_measurement: seconds

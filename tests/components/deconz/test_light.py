@@ -4,8 +4,16 @@ from unittest.mock import patch
 
 import pytest
 
-from homeassistant.components.deconz.const import ATTR_ON, CONF_ALLOW_DECONZ_GROUPS
-from homeassistant.components.deconz.light import DECONZ_GROUP
+from homeassistant.components.deconz.const import (
+    ATTR_ON,
+    CONF_ALLOW_DECONZ_GROUPS,
+    DOMAIN as DECONZ_DOMAIN,
+)
+from homeassistant.components.deconz.light import (
+    CONF_LIGHT_ON_TIME,
+    DECONZ_GROUP,
+    SERVICE_LIGHT_ON_TIME,
+)
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_MODE,
@@ -473,6 +481,15 @@ async def test_light_state_change(hass, aioclient_mock, mock_deconz_websocket):
             },
             {},
         ),
+        (  # Entity service - Turn on light with off timer
+            {
+                "light_on": False,
+                "domain": DECONZ_DOMAIN,
+                "service": SERVICE_LIGHT_ON_TIME,
+                "call": {ATTR_ENTITY_ID: "light.hue_go", CONF_LIGHT_ON_TIME: 10.1},
+            },
+            {"on": True, "ontime": 101},
+        ),
     ],
 )
 async def test_light_service_calls(hass, aioclient_mock, input, expected):
@@ -514,7 +531,7 @@ async def test_light_service_calls(hass, aioclient_mock, input, expected):
     mock_deconz_put_request(aioclient_mock, config_entry.data, "/lights/0/state")
 
     await hass.services.async_call(
-        LIGHT_DOMAIN,
+        input.get("domain", LIGHT_DOMAIN),
         input["service"],
         input["call"],
         blocking=True,

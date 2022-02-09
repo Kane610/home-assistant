@@ -56,6 +56,7 @@ class DeconzBinarySensorDescriptionMixin:
     suffix: str
     update_key: str
     value_fn: Callable[[PydeconzSensor], bool | None]
+    is_on: bool
 
 
 @dataclass
@@ -71,6 +72,7 @@ ENTITY_DESCRIPTIONS = {
         DeconzBinarySensorDescription(
             key="alarm",
             value_fn=lambda device: device.alarm,
+            is_on=True,
             suffix="",
             update_key="alarm",
             device_class=BinarySensorDeviceClass.SAFETY,
@@ -80,6 +82,7 @@ ENTITY_DESCRIPTIONS = {
         DeconzBinarySensorDescription(
             key="carbon_monoxide",
             value_fn=lambda device: device.carbon_monoxide,
+            is_on=True,
             suffix="",
             update_key="carbonmonoxide",
             device_class=BinarySensorDeviceClass.CO,
@@ -89,6 +92,7 @@ ENTITY_DESCRIPTIONS = {
         DeconzBinarySensorDescription(
             key="fire",
             value_fn=lambda device: device.fire,
+            is_on=True,
             suffix="",
             update_key="fire",
             device_class=BinarySensorDeviceClass.SMOKE,
@@ -96,6 +100,7 @@ ENTITY_DESCRIPTIONS = {
         DeconzBinarySensorDescription(
             key="in_test_mode",
             value_fn=lambda device: device.in_test_mode,
+            is_on=True,
             suffix="Test Mode",
             update_key="test",
             device_class=BinarySensorDeviceClass.SMOKE,
@@ -106,6 +111,7 @@ ENTITY_DESCRIPTIONS = {
         DeconzBinarySensorDescription(
             key="flag",
             value_fn=lambda device: device.flag,
+            is_on=True,
             suffix="",
             update_key="flag",
         )
@@ -114,6 +120,7 @@ ENTITY_DESCRIPTIONS = {
         DeconzBinarySensorDescription(
             key="open",
             value_fn=lambda device: device.open,
+            is_on=True,
             suffix="",
             update_key="open",
             device_class=BinarySensorDeviceClass.OPENING,
@@ -123,15 +130,26 @@ ENTITY_DESCRIPTIONS = {
         DeconzBinarySensorDescription(
             key="presence",
             value_fn=lambda device: device.presence,
+            is_on=True,
             suffix="",
             update_key="presence",
             device_class=BinarySensorDeviceClass.MOTION,
-        )
+        ),
+        DeconzBinarySensorDescription(
+            key="dark",
+            value_fn=lambda device: device.dark,
+            is_on=False,
+            suffix="Light detected",
+            update_key="dark",
+            device_class=BinarySensorDeviceClass.LIGHT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
     ],
     Vibration: [
         DeconzBinarySensorDescription(
             key="vibration",
             value_fn=lambda device: device.vibration,
+            is_on=True,
             suffix="",
             update_key="vibration",
             device_class=BinarySensorDeviceClass.VIBRATION,
@@ -141,6 +159,7 @@ ENTITY_DESCRIPTIONS = {
         DeconzBinarySensorDescription(
             key="water",
             value_fn=lambda device: device.water,
+            is_on=True,
             suffix="",
             update_key="water",
             device_class=BinarySensorDeviceClass.MOISTURE,
@@ -152,6 +171,7 @@ BINARY_SENSOR_DESCRIPTIONS = [
     DeconzBinarySensorDescription(
         key="tampered",
         value_fn=lambda device: device.tampered,
+        is_on=True,
         suffix="Tampered",
         update_key="tampered",
         device_class=BinarySensorDeviceClass.TAMPER,
@@ -160,6 +180,7 @@ BINARY_SENSOR_DESCRIPTIONS = [
     DeconzBinarySensorDescription(
         key="low_battery",
         value_fn=lambda device: device.low_battery,
+        is_on=True,
         suffix="Low Battery",
         update_key="lowbattery",
         device_class=BinarySensorDeviceClass.BATTERY,
@@ -261,7 +282,10 @@ class DeconzBinarySensor(DeconzDevice, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         """Return the state of the sensor."""
-        return self.entity_description.value_fn(self._device)
+        return (
+            self.entity_description.value_fn(self._device)
+            is self.entity_description.is_on
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, bool | float | int | list | None]:

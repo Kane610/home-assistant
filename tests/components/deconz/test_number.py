@@ -41,7 +41,7 @@ TEST_DATA = [
             "uniqueid": "00:00:00:00:00:00:00:00-00",
         },
         {
-            "entity_count": 3,
+            "entity_count": 4,
             "device_count": 3,
             "entity_id": "number.presence_sensor_delay",
             "unique_id": "00:00:00:00:00:00:00:00-delay",

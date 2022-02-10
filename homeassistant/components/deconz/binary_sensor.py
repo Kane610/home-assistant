@@ -10,6 +10,7 @@ from pydeconz.sensor import (
     DeconzSensor as PydeconzSensor,
     Fire,
     GenericFlag,
+    LightLevel,
     OpenClose,
     Presence,
     Vibration,
@@ -67,6 +68,16 @@ class DeconzBinarySensorDescription(
     """Class describing deCONZ binary sensor entities."""
 
 
+dark_entity_description = DeconzBinarySensorDescription(
+    key="dark",
+    value_fn=lambda device: device.dark,
+    is_on=False,
+    suffix="Light detected",
+    update_key="dark",
+    device_class=BinarySensorDeviceClass.LIGHT,
+    entity_category=EntityCategory.DIAGNOSTIC,
+)
+
 ENTITY_DESCRIPTIONS = {
     Alarm: [
         DeconzBinarySensorDescription(
@@ -116,6 +127,7 @@ ENTITY_DESCRIPTIONS = {
             update_key="flag",
         )
     ],
+    LightLevel: [dark_entity_description],
     OpenClose: [
         DeconzBinarySensorDescription(
             key="open",

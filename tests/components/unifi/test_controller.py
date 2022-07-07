@@ -478,6 +478,7 @@ async def test_get_controller_verify_ssl_false(hass):
     [
         (asyncio.TimeoutError, CannotConnect),
         (aiounifi.BadGateway, CannotConnect),
+        (aiounifi.Forbidden, CannotConnect),
         (aiounifi.ServiceUnavailable, CannotConnect),
         (aiounifi.RequestError, CannotConnect),
         (aiounifi.ResponseError, CannotConnect),

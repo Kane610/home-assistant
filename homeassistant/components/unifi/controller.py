@@ -506,6 +506,7 @@ async def get_controller(
     except (
         asyncio.TimeoutError,
         aiounifi.BadGateway,
+        aiounifi.Forbidden,
         aiounifi.ServiceUnavailable,
         aiounifi.RequestError,
         aiounifi.ResponseError,

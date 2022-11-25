@@ -10,8 +10,9 @@ from typing import Generic, TypeVar
 
 import aiounifi
 from aiounifi.interfaces.api_handlers import ItemEvent
+from aiounifi.interfaces.clients import Clients
 from aiounifi.interfaces.devices import Devices
-from aiounifi.models.api import SOURCE_DATA, SOURCE_EVENT
+from aiounifi.models.client import Client
 from aiounifi.models.device import Device
 from aiounifi.models.event import Event, EventKey
 
@@ -26,7 +27,6 @@ import homeassistant.util.dt as dt_util
 
 from .const import DOMAIN as UNIFI_DOMAIN
 from .controller import UniFiController
-from .unifi_client import UniFiClientBase
 
 LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +59,7 @@ CLIENT_STATIC_ATTRIBUTES = [
 CLIENT_CONNECTED_ALL_ATTRIBUTES = CLIENT_CONNECTED_ATTRIBUTES + CLIENT_STATIC_ATTRIBUTES
 
 WIRED_CONNECTION = (EventKey.WIRED_CLIENT_CONNECTED,)
+WIRED_DISCONNECTION = (EventKey.WIRED_CLIENT_DISCONNECTED,)
 WIRELESS_CONNECTION = (
     EventKey.WIRELESS_CLIENT_CONNECTED,
     EventKey.WIRELESS_CLIENT_ROAM,
@@ -66,6 +67,10 @@ WIRELESS_CONNECTION = (
     EventKey.WIRELESS_GUEST_CONNECTED,
     EventKey.WIRELESS_GUEST_ROAM,
     EventKey.WIRELESS_GUEST_ROAMRADIO,
+)
+WIRELESS_DISCONNECTION = (
+    EventKey.WIRELESS_CLIENT_DISCONNECTED,
+    EventKey.WIRELESS_GUEST_DISCONNECTED,
 )
 
 
@@ -80,6 +85,73 @@ def async_device_available_fn(controller: UniFiController, obj_id: str) -> bool:
     return controller.available and not device.disabled
 
 
+@callback
+def async_device_heartbeat_timedelta_fn(
+    controller: UniFiController, obj_id: str
+) -> timedelta:
+    """Check if device object is disabled."""
+    device = controller.api.devices[obj_id]
+    return timedelta(seconds=device.next_interval + 60)
+
+
+@callback
+def async_device_is_connected_fn(controller: UniFiController, obj_id: str) -> bool:
+    """Check if device object is disabled."""
+    device = controller.api.devices[obj_id]
+    return device.state == 1
+
+
+@callback
+def async_client_allowed_fn(controller: UniFiController, obj_id: str) -> bool:
+    """Check if client is allowed."""
+    client = controller.api.clients[obj_id]
+    if not controller.option_track_clients:
+        return False
+
+    if client.mac not in controller.wireless_clients:
+        if not controller.option_track_wired_clients:
+            return False
+
+    elif (
+        client.essid
+        and controller.option_ssid_filter
+        and client.essid not in controller.option_ssid_filter
+    ):
+        return False
+
+    return True
+
+
+@callback
+def async_client_heartbeat_timedelta_fn(
+    controller: UniFiController, obj_id: str
+) -> timedelta:
+    """Check if device object is disabled."""
+    return controller.option_detection_time
+
+
+@callback
+def async_client_is_connected_fn(controller: UniFiController, obj_id: str) -> bool:
+    """Check if device object is disabled."""
+    client = controller.api.clients[obj_id]
+    if client.is_wired != (is_wired := client.mac not in controller.wireless_clients):
+        return False  # Wired bug in action
+    if (
+        not is_wired
+        and client.essid
+        and controller.option_ssid_filter
+        and client.essid not in controller.option_ssid_filter
+    ):
+        return False
+
+    if (
+        dt_util.utcnow() - dt_util.utc_from_timestamp(float(client.last_seen or 0))
+        > controller.option_detection_time
+    ):
+        return False
+    return True
+
+
 @dataclass
 class UnifiEntityLoader(Generic[_HandlerT, _DataT]):
     """Validate and load entities from different UniFi handlers."""
@@ -89,11 +161,12 @@ class UnifiEntityLoader(Generic[_HandlerT, _DataT]):
     available_fn: Callable[[UniFiController, str], bool]
     event_is_on: tuple[EventKey, ...] | None
     event_to_subscribe: tuple[EventKey, ...] | None
-    is_connected_fn: Callable[[aiounifi.Controller, _DataT], bool]
+    heartbeat_timedelta_fn: Callable[[UniFiController, str], timedelta]
+    is_connected_fn: Callable[[UniFiController, str], bool]
     name_fn: Callable[[_DataT], str | None]
     object_fn: Callable[[aiounifi.Controller, str], _DataT]
     supported_fn: Callable[[aiounifi.Controller, str], bool | None]
-    unique_id_fn: Callable[[str], str]
+    unique_id_fn: Callable[[UniFiController, str], str]
     ip_address_fn: Callable[[aiounifi.Controller, str], str]
     hostname_fn: Callable[[aiounifi.Controller, str], str | None]
 
@@ -104,9 +177,28 @@ class UnifiEntityDescription(EntityDescription, UnifiEntityLoader[_HandlerT, _Da
 
 
 ENTITY_DESCRIPTIONS: tuple[UnifiEntityDescription, ...] = (
-    # UnifiEntityDescription[Clients, Client](),
+    UnifiEntityDescription[Clients, Client](
+        key="Client device scanner",
+        has_entity_name=True,
+        allowed_fn=async_client_allowed_fn,
+        api_handler_fn=lambda api: api.clients,
+        available_fn=lambda controller, _: controller.available,
+        event_is_on=WIRED_CONNECTION + WIRELESS_CONNECTION,
+        event_to_subscribe=WIRED_CONNECTION
+        + WIRED_DISCONNECTION
+        + WIRELESS_CONNECTION
+        + WIRELESS_DISCONNECTION,
+        heartbeat_timedelta_fn=async_client_heartbeat_timedelta_fn,
+        is_connected_fn=async_client_is_connected_fn,
+        name_fn=lambda client: client.name or client.hostname,
+        object_fn=lambda api, obj_id: api.clients[obj_id],
+        supported_fn=lambda controller, obj_id: True,
+        unique_id_fn=lambda controller, obj_id: f"{obj_id}-{controller.site}",
+        ip_address_fn=lambda api, obj_id: api.clients[obj_id].ip,
+        hostname_fn=lambda api, obj_id: None,
+    ),
     UnifiEntityDescription[Devices, Device](
-        key="Device scanner",
+        key="UniFi device scanner",
         has_entity_name=True,
         icon="mdi:ethernet",
         allowed_fn=lambda controller, obj_id: controller.option_track_devices,
@@ -114,11 +206,12 @@ ENTITY_DESCRIPTIONS: tuple[UnifiEntityDescription, ...] = (
         available_fn=async_device_available_fn,
         event_is_on=None,
         event_to_subscribe=None,
-        is_connected_fn=lambda api, device: device.state == 1,
+        heartbeat_timedelta_fn=async_device_heartbeat_timedelta_fn,
+        is_connected_fn=async_device_is_connected_fn,
         name_fn=lambda device: device.name or device.model,
         object_fn=lambda api, obj_id: api.devices[obj_id],
-        supported_fn=lambda api, obj_id: True,
-        unique_id_fn=lambda obj_id: obj_id,
+        supported_fn=lambda controller, obj_id: True,
+        unique_id_fn=lambda controller, obj_id: obj_id,
         ip_address_fn=lambda api, obj_id: api.devices[obj_id].ip,
         hostname_fn=lambda api, obj_id: None,
     ),
@@ -133,21 +226,6 @@ async def async_setup_entry(
     """Set up device tracker for UniFi Network integration."""
     controller: UniFiController = hass.data[UNIFI_DOMAIN][config_entry.entry_id]
     controller.entities[DOMAIN] = {CLIENT_TRACKER: set(), DEVICE_TRACKER: set()}
-
-    @callback
-    def items_added(
-        clients: set = controller.api.clients, devices: set = controller.api.devices
-    ) -> None:
-        """Update the values of the controller."""
-        if controller.option_track_clients:
-            add_client_entities(controller, async_add_entities, clients)
-
-    for signal in (controller.signal_update, controller.signal_options_update):
-        config_entry.async_on_unload(
-            async_dispatcher_connect(hass, signal, items_added)
-        )
-
-    items_added()
 
     @callback
     def async_load_entities(description: UnifiEntityDescription) -> None:
@@ -179,217 +257,6 @@ async def async_setup_entry(
         async_load_entities(description)
 
 
-@callback
-def add_client_entities(controller, async_add_entities, clients):
-    """Add new client tracker entities from the controller."""
-    trackers = []
-
-    for mac in clients:
-        if mac in controller.entities[DOMAIN][UniFiClientTracker.TYPE] or not (
-            client := controller.api.clients.get(mac)
-        ):
-            continue
-
-        if mac not in controller.wireless_clients:
-            if not controller.option_track_wired_clients:
-                continue
-        elif (
-            client.essid
-            and controller.option_ssid_filter
-            and client.essid not in controller.option_ssid_filter
-        ):
-            continue
-
-        trackers.append(UniFiClientTracker(client, controller))
-
-    async_add_entities(trackers)
-
-
-class UniFiClientTracker(UniFiClientBase, ScannerEntity):
-    """Representation of a network client."""
-
-    DOMAIN = DOMAIN
-    TYPE = CLIENT_TRACKER
-
-    def __init__(self, client, controller):
-        """Set up tracked client."""
-        super().__init__(client, controller)
-
-        self._controller_connection_state_changed = False
-
-        self._only_listen_to_data_source = False
-
-        last_seen = client.last_seen or 0
-        self.schedule_update = self._is_connected = (
-            self.is_wired == client.is_wired
-            and dt_util.utcnow() - dt_util.utc_from_timestamp(float(last_seen))
-            < controller.option_detection_time
-        )
-
-    @callback
-    def _async_log_debug_data(self, method: str) -> None:
-        """Print debug data about entity."""
-        if not LOGGER.isEnabledFor(logging.DEBUG):
-            return
-        last_seen = self.client.last_seen or 0
-        LOGGER.debug(
-            "%s [%s, %s] [%s %s] [%s] %s (%s)",
-            method,
-            self.entity_id,
-            self.client.mac,
-            self.schedule_update,
-            self._is_connected,
-            dt_util.utc_from_timestamp(float(last_seen)),
-            dt_util.utcnow() - dt_util.utc_from_timestamp(float(last_seen)),
-            last_seen,
-        )
-
-    async def async_added_to_hass(self) -> None:
-        """Watch object when added."""
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass,
-                f"{self.controller.signal_heartbeat_missed}_{self.unique_id}",
-                self._make_disconnected,
-            )
-        )
-        await super().async_added_to_hass()
-        self._async_log_debug_data("added_to_hass")
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Disconnect object when removed."""
-        self.controller.async_heartbeat(self.unique_id)
-        await super().async_will_remove_from_hass()
-
-    @callback
-    def async_signal_reachable_callback(self) -> None:
-        """Call when controller connection state change."""
-        self._controller_connection_state_changed = True
-        super().async_signal_reachable_callback()
-
-    @callback
-    def async_update_callback(self) -> None:
-        """Update the clients state."""
-
-        if self._controller_connection_state_changed:
-            self._controller_connection_state_changed = False
-
-            if self.controller.available:
-                self.schedule_update = True
-
-            else:
-                self.controller.async_heartbeat(self.unique_id)
-                super().async_update_callback()
-
-        elif (
-            self.client.last_updated == SOURCE_DATA
-            and self.is_wired == self.client.is_wired
-        ):
-            self._is_connected = True
-            self.schedule_update = True
-            self._only_listen_to_data_source = True
-
-        elif (
-            self.client.last_updated == SOURCE_EVENT
-            and not self._only_listen_to_data_source
-        ):
-
-            if (self.is_wired and self.client.event.key in WIRED_CONNECTION) or (
-                not self.is_wired and self.client.event.key in WIRELESS_CONNECTION
-            ):
-                self._is_connected = True
-                self.schedule_update = False
-                self.controller.async_heartbeat(self.unique_id)
-                super().async_update_callback()
-
-            else:
-                self.schedule_update = True
-
-        self._async_log_debug_data("update_callback")
-
-        if self.schedule_update:
-            self.schedule_update = False
-            self.controller.async_heartbeat(
-                self.unique_id, dt_util.utcnow() + self.controller.option_detection_time
-            )
-
-            super().async_update_callback()
-
-    @callback
-    def _make_disconnected(self, *_):
-        """No heart beat by device."""
-        self._is_connected = False
-        self.async_write_ha_state()
-        self._async_log_debug_data("make_disconnected")
-
-    @property
-    def is_connected(self):
-        """Return true if the client is connected to the network."""
-        if (
-            not self.is_wired
-            and self.client.essid
-            and self.controller.option_ssid_filter
-            and self.client.essid not in self.controller.option_ssid_filter
-        ):
-            return False
-
-        return self._is_connected
-
-    @property
-    def source_type(self) -> SourceType:
-        """Return the source type of the client."""
-        return SourceType.ROUTER
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique identifier for this client."""
-        return f"{self.client.mac}-{self.controller.site}"
-
-    @property
-    def extra_state_attributes(self):
-        """Return the client state attributes."""
-        raw = self.client.raw
-
-        attributes_to_check = CLIENT_STATIC_ATTRIBUTES
-        if self.is_connected:
-            attributes_to_check = CLIENT_CONNECTED_ALL_ATTRIBUTES
-
-        attributes = {k: raw[k] for k in attributes_to_check if k in raw}
-        attributes["is_wired"] = self.is_wired
-
-        return attributes
-
-    @property
-    def ip_address(self) -> str:
-        """Return the primary ip address of the device."""
-        return self.client.raw.get("ip")
-
-    @property
-    def mac_address(self) -> str:
-        """Return the mac address of the device."""
-        return self.client.raw.get("mac")
-
-    @property
-    def hostname(self) -> str:
-        """Return hostname of the device."""
-        return self.client.raw.get("hostname")
-
-    async def options_updated(self) -> None:
-        """Config entry options are updated, remove entity if option is disabled."""
-        if not self.controller.option_track_clients:
-            await self.remove_item({self.client.mac})
-
-        elif self.is_wired:
-            if not self.controller.option_track_wired_clients:
-                await self.remove_item({self.client.mac})
-
-        elif (
-            self.controller.option_ssid_filter
-            and self.client.essid not in self.controller.option_ssid_filter
-        ):
-            await self.remove_item({self.client.mac})
-
-
 class UnifiScannerEntity(ScannerEntity):
     """Representation of a UniFi scanner."""
 
@@ -408,14 +275,14 @@ class UnifiScannerEntity(ScannerEntity):
         self.entity_description = description
 
         self._controller_connection_state_changed = False
+        self._ignore_events = False
         self._removed = False
-        self.schedule_update = False
 
         self._attr_available = description.available_fn(controller, obj_id)
-        self._attr_unique_id: str = description.unique_id_fn(obj_id)
+        self._attr_unique_id: str = description.unique_id_fn(controller, obj_id)
 
         obj = description.object_fn(controller.api, obj_id)
-        self._is_connected = description.is_connected_fn(controller.api, obj)
+        self._is_connected = description.is_connected_fn(controller, obj_id)
         self._attr_name = description.name_fn(obj)
 
     @property
@@ -481,10 +348,17 @@ class UnifiScannerEntity(ScannerEntity):
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass,
-                f"{self.controller.signal_heartbeat_missed}_{self._obj_id}",
+                f"{self.controller.signal_heartbeat_missed}_{self.unique_id}",
                 self._make_disconnected,
             )
         )
+        if description.event_to_subscribe is not None:
+            self.async_on_remove(
+                self.controller.api.events.subscribe(
+                    self.async_event_callback,
+                    description.event_to_subscribe,
+                )
+            )
 
     @callback
     def _make_disconnected(self, *_):
@@ -504,27 +378,32 @@ class UnifiScannerEntity(ScannerEntity):
             self.hass.async_create_task(self.remove_item({self._obj_id}))
             return
 
+        state_changed = False
+        is_connected = self.entity_description.is_connected_fn(
+            self.controller, self._obj_id
+        )
+
         if self._controller_connection_state_changed:
             self._controller_connection_state_changed = False
 
             if self.controller.available:
-                if self._is_connected:
-                    self.schedule_update = True
-
+                state_changed = self._is_connected and is_connected
             else:
                 self.controller.async_heartbeat(self.unique_id)
-        else:
-            self._is_connected = True
-            self.schedule_update = True
 
-        if self.schedule_update:
-            device = self.entity_description.object_fn(
-                self.controller.api, self._obj_id
-            )
-            self.schedule_update = False
+        else:
+            if not self._ignore_events:  # Prioritize normal data updates over events
+                self._ignore_events = True
+            state_changed = self._is_connected or is_connected
+
+        if state_changed:
+            self._is_connected = is_connected
             self.controller.async_heartbeat(
                 self.unique_id,
-                dt_util.utcnow() + timedelta(seconds=device.next_interval + 60),
+                dt_util.utcnow()
+                + self.entity_description.heartbeat_timedelta_fn(
+                    self.controller, self._obj_id
+                ),
             )
 
         self._attr_available = description.available_fn(self.controller, self._obj_id)
@@ -538,17 +417,25 @@ class UnifiScannerEntity(ScannerEntity):
     @callback
     def async_event_callback(self, event: Event) -> None:
         """Event subscription callback."""
-        if event.mac != self._obj_id:
+        if event.mac != self._obj_id or self._ignore_events:
             return
 
         description = self.entity_description
         assert isinstance(description.event_to_subscribe, tuple)
         assert isinstance(description.event_is_on, tuple)
 
-        if event.key in description.event_to_subscribe:
-            self._is_connected = event.key in description.event_is_on
-        self._attr_available = description.available_fn(self.controller, self._obj_id)
-        self.async_write_ha_state()
+        if event.key in description.event_is_on:
+            self.controller.async_heartbeat(self.unique_id)
+            self._is_connected = True
+            self.async_write_ha_state()
+        else:
+            self.controller.async_heartbeat(
+                self.unique_id,
+                dt_util.utcnow()
+                + self.entity_description.heartbeat_timedelta_fn(
+                    self.controller, self._obj_id
+                ),
+            )
 
     async def options_updated(self) -> None:
         """Config entry options are updated, remove entity if option is disabled."""

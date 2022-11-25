@@ -219,9 +219,9 @@ async def test_remove_sensors(hass, aioclient_mock, mock_unifi_websocket):
         clients_response=[wired_client, wireless_client],
     )
 
+    assert len(hass.states.async_entity_ids(TRACKER_DOMAIN)) == 2
     assert len(hass.states.async_all()) == 9
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 6
-    assert len(hass.states.async_entity_ids(TRACKER_DOMAIN)) == 2
     assert hass.states.get("sensor.wired_client_rx")
     assert hass.states.get("sensor.wired_client_tx")
     assert hass.states.get("sensor.wired_client_uptime")

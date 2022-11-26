@@ -341,13 +341,6 @@ class UnifiScannerEntity(ScannerEntity):
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass,
-                self.controller.signal_remove,
-                self.remove_item,
-            )
-        )
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass,
                 f"{self.controller.signal_heartbeat_missed}_{self.unique_id}",
                 self._make_disconnected,
             )

@@ -234,13 +234,6 @@ class UnifiSensorEntity(SensorEntity):
                 self.options_updated,
             )
         )
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass,
-                self.controller.signal_remove,
-                self.remove_item,
-            )
-        )
 
     @callback
     def async_signalling_callback(self, event: ItemEvent, obj_id: str) -> None:

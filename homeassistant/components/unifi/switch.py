@@ -377,13 +377,6 @@ class UnifiSwitchEntity(SwitchEntity, Generic[_HandlerT, _DataT]):
                 self.options_updated,
             )
         )
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass,
-                self.controller.signal_remove,
-                self.remove_item,
-            )
-        )
         if description.event_to_subscribe is not None:
             self.async_on_remove(
                 self.controller.api.events.subscribe(

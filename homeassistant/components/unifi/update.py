@@ -207,13 +207,6 @@ class UnifiDeviceUpdateEntity(UpdateEntity, Generic[_HandlerT, _DataT]):
                 self.async_signal_reachable_callback,
             )
         )
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass,
-                self.controller.signal_remove,
-                self.remove_item,
-            )
-        )
 
     @callback
     def async_signalling_callback(self, event: ItemEvent, obj_id: str) -> None:

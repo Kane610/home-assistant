@@ -94,7 +94,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiUpgradeEntityDescription, ...] = (
         name_fn=lambda device: None,
         object_fn=lambda api, obj_id: api.devices[obj_id],
         state_fn=lambda api, device: device.state == 4,
-        supported_fn=lambda api, obj_id: True,
+        supported_fn=lambda controller, obj_id: True,
         unique_id_fn=lambda obj_id: f"device_update-{obj_id}",
     ),
 )
@@ -144,7 +144,7 @@ class UnifiDeviceUpdateEntity(UnifiEntity, UpdateEntity, Generic[HandlerT, DataT
     entity_description: UnifiEntityDescription[HandlerT, DataT]
 
     @callback
-    def initiate_state(self) -> None:
+    def async_initiate_state(self) -> None:
         """Initiate entity state.
 
         Register supported features.
@@ -170,7 +170,7 @@ class UnifiDeviceUpdateEntity(UnifiEntity, UpdateEntity, Generic[HandlerT, DataT
         await self.entity_description.control_fn(self.controller.api, self._obj_id)
 
     @callback
-    def update_state(self, event: ItemEvent, obj_id: str) -> None:
+    def async_update_state(self, event: ItemEvent, obj_id: str) -> None:
         """Update entity state.
 
         Update in_progress, installed_version and latest_version.

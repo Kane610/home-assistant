@@ -37,7 +37,7 @@ class UnifiDescription(Generic[HandlerT, DataT]):
     event_to_subscribe: tuple[EventKey, ...] | None
     name_fn: Callable[[DataT], str | None]
     object_fn: Callable[[aiounifi.Controller, str], DataT]
-    supported_fn: Callable[[aiounifi.Controller, str], bool | None]
+    supported_fn: Callable[[UniFiController, str], bool | None]
     unique_id_fn: Callable[[str], str]
 
 
@@ -71,22 +71,35 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
 
         obj = description.object_fn(self.controller.api, obj_id)
         self._attr_name = description.name_fn(obj)
-        self.initiate_state()
+        self.async_initiate_state()
 
     async def async_added_to_hass(self) -> None:
         """Register callbacks."""
         description = self.entity_description
         handler = description.api_handler_fn(self.controller.api)
+
+        # New data from handler
         self.async_on_remove(
             handler.subscribe(
                 self.async_signalling_callback,
             )
         )
+
+        # State change from controller or websocket
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass,
                 self.controller.signal_reachable,
                 self.async_signal_reachable_callback,
+            )
+        )
+
+        # Config entry options updated
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass,
+                self.controller.signal_options_update,
+                self.async_signal_options_updated,
             )
         )
 
@@ -99,13 +112,18 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
 
         description = self.entity_description
         self._attr_available = description.available_fn(self.controller, self._obj_id)
-        self.update_state(event, obj_id)
+        self.async_update_state(event, obj_id)
         self.async_write_ha_state()
 
     @callback
     def async_signal_reachable_callback(self) -> None:
         """Call when controller connection state change."""
         self.async_signalling_callback(ItemEvent.ADDED, self._obj_id)
+
+    async def async_signal_options_updated(self) -> None:
+        """Config entry options are updated, remove entity if option is disabled."""
+        if not self.entity_description.allowed_fn(self.controller, self._obj_id):
+            await self.remove_item({self._obj_id})
 
     async def remove_item(self, keys: set) -> None:
         """Remove entity if object ID is part of set."""
@@ -118,14 +136,14 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
             await self.async_remove(force_remove=True)
 
     @callback
-    def initiate_state(self) -> None:
+    def async_initiate_state(self) -> None:
         """Initiate entity state.
 
         Do additional stuff setting up platform entity child class state.
         """
 
     @callback
-    def update_state(self, event: ItemEvent, obj_id: str) -> None:
+    def async_update_state(self, event: ItemEvent, obj_id: str) -> None:
         """Update entity state.
 
         Do additional stuff updating platform entity child class state.

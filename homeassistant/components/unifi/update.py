@@ -176,6 +176,7 @@ class UnifiDeviceUpdateEntity(UnifiEntity, UpdateEntity, Generic[HandlerT, DataT
         Update in_progress, installed_version and latest_version.
         """
         description = self.entity_description
+
         obj = description.object_fn(self.controller.api, self._obj_id)
         self._attr_in_progress = description.state_fn(self.controller.api, obj)
         self._attr_installed_version = obj.version

@@ -6,11 +6,16 @@ from dataclasses import dataclass
 from typing import Generic, TypeVar, Union
 
 import aiounifi
-from aiounifi.interfaces.api_handlers import APIHandler, ItemEvent
+from aiounifi.interfaces.api_handlers import (
+    APIHandler,
+    CallbackType,
+    ItemEvent,
+    UnsubscribeType,
+)
 from aiounifi.interfaces.outlets import Outlets
 from aiounifi.interfaces.ports import Ports
 from aiounifi.models.api import APIItem
-from aiounifi.models.event import EventKey
+from aiounifi.models.event import Event, EventKey
 from aiounifi.models.outlet import Outlet
 from aiounifi.models.port import Port
 
@@ -23,6 +28,7 @@ from .controller import UniFiController
 
 DataT = TypeVar("DataT", bound=Union[APIItem, Outlet, Port])
 HandlerT = TypeVar("HandlerT", bound=Union[APIHandler, Outlets, Ports])
+SubscriptionT = Callable[[CallbackType, ItemEvent], UnsubscribeType]
 
 
 @dataclass
@@ -44,6 +50,8 @@ class UnifiDescription(Generic[HandlerT, DataT]):
 @dataclass
 class UnifiEntityDescription(EntityDescription, UnifiDescription[HandlerT, DataT]):
     """UniFi Entity Description."""
+
+    custom_subscribe: Callable[[aiounifi.Controller], SubscriptionT] | None = None
 
 
 class UnifiEntity(Entity, Generic[HandlerT, DataT]):
@@ -103,6 +111,23 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
             )
         )
 
+        # Subscribe to events if defined
+        if description.event_to_subscribe is not None:
+            self.async_on_remove(
+                self.controller.api.events.subscribe(
+                    self.async_event_callback,
+                    description.event_to_subscribe,
+                )
+            )
+
+        # Platform custom subscribe
+        if description.custom_subscribe is not None:
+            self.async_on_remove(
+                description.custom_subscribe(self.controller.api)(
+                    self.async_signalling_callback, ItemEvent.CHANGED
+                ),
+            )
+
     @callback
     def async_signalling_callback(self, event: ItemEvent, obj_id: str) -> None:
         """Update the switch state."""
@@ -111,6 +136,10 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
             return
 
         description = self.entity_description
+        if not description.supported_fn(self.controller, self._obj_id):
+            self.hass.async_create_task(self.remove_item({self._obj_id}))
+            return
+
         self._attr_available = description.available_fn(self.controller, self._obj_id)
         self.async_update_state(event, obj_id)
         self.async_write_ha_state()
@@ -145,6 +174,13 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
     @callback
     def async_update_state(self, event: ItemEvent, obj_id: str) -> None:
         """Update entity state.
+
+        Do additional stuff updating platform entity child class state.
+        """
+
+    @callback
+    def async_event_callback(self, event: Event) -> None:
+        """Update entity state based on subscribed event.
 
         Do additional stuff updating platform entity child class state.
         """

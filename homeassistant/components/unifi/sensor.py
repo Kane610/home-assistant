@@ -193,8 +193,8 @@ class UnifiSensorEntity(UnifiEntity, SensorEntity):
         obj_id = self._obj_id
         controller = self.controller
         description = self.entity_description
-
         obj = description.object_fn(controller.api, obj_id)
+
         self._attr_native_value = description.value_fn(controller, obj)
 
     @callback
@@ -204,9 +204,6 @@ class UnifiSensorEntity(UnifiEntity, SensorEntity):
         Update native_value.
         """
         description = self.entity_description
-        if not description.supported_fn(self.controller, self._obj_id):
-            self.hass.async_create_task(self.remove_item({self._obj_id}))
-            return
 
         obj = description.object_fn(self.controller.api, self._obj_id)
         if (value := description.value_fn(self.controller, obj)) != self.native_value:

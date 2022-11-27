@@ -38,20 +38,18 @@ class UnifiDescription(Generic[HandlerT, DataT]):
     allowed_fn: Callable[[UniFiController, str], bool]
     api_handler_fn: Callable[[aiounifi.Controller], HandlerT]
     available_fn: Callable[[UniFiController, str], bool]
-    device_info_fn: Callable[[aiounifi.Controller, str], DeviceInfo]
+    device_info_fn: Callable[[aiounifi.Controller, str], DeviceInfo | None]
     event_is_on: tuple[EventKey, ...] | None
     event_to_subscribe: tuple[EventKey, ...] | None
     name_fn: Callable[[DataT], str | None]
     object_fn: Callable[[aiounifi.Controller, str], DataT]
     supported_fn: Callable[[UniFiController, str], bool | None]
-    unique_id_fn: Callable[[str], str]
+    unique_id_fn: Callable[[UniFiController, str], str]
 
 
 @dataclass
 class UnifiEntityDescription(EntityDescription, UnifiDescription[HandlerT, DataT]):
     """UniFi Entity Description."""
-
-    custom_subscribe: Callable[[aiounifi.Controller], SubscriptionT] | None = None
 
 
 class UnifiEntity(Entity, Generic[HandlerT, DataT]):
@@ -59,6 +57,8 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
 
     entity_description: UnifiEntityDescription[HandlerT, DataT]
     _attr_should_poll = False
+
+    _attr_unique_id: str
 
     def __init__(
         self,
@@ -75,7 +75,7 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
 
         self._attr_available = description.available_fn(controller, obj_id)
         self._attr_device_info = description.device_info_fn(controller.api, obj_id)
-        self._attr_unique_id = description.unique_id_fn(obj_id)
+        self._attr_unique_id = description.unique_id_fn(controller, obj_id)
 
         obj = description.object_fn(self.controller.api, obj_id)
         self._attr_name = description.name_fn(obj)
@@ -120,13 +120,7 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
                 )
             )
 
-        # Platform custom subscribe
-        if description.custom_subscribe is not None:
-            self.async_on_remove(
-                description.custom_subscribe(self.controller.api)(
-                    self.async_signalling_callback, ItemEvent.CHANGED
-                ),
-            )
+        self.async_custom_subscribe()
 
     @callback
     def async_signalling_callback(self, event: ItemEvent, obj_id: str) -> None:
@@ -184,3 +178,7 @@ class UnifiEntity(Entity, Generic[HandlerT, DataT]):
 
         Do additional stuff updating platform entity child class state.
         """
+
+    @callback
+    def async_custom_subscribe(self) -> None:
+        """Do custom subscriptions."""

@@ -12,12 +12,11 @@ from dataclasses import dataclass
 from typing import Any, Generic
 
 import aiounifi
-from aiounifi.interfaces.api_handlers import ItemEvent
+from aiounifi.interfaces.api_handlers import CallbackType, ItemEvent, UnsubscribeType
 from aiounifi.interfaces.clients import Clients
 from aiounifi.interfaces.dpi_restriction_groups import DPIRestrictionGroups
 from aiounifi.interfaces.outlets import Outlets
 from aiounifi.interfaces.ports import Ports
-from aiounifi.models.api import APIItem
 from aiounifi.models.client import Client, ClientBlockRequest
 from aiounifi.models.device import (
     DeviceSetOutletRelayRequest,
@@ -47,6 +46,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import ATTR_MANUFACTURER, DOMAIN as UNIFI_DOMAIN
 from .controller import UniFiController
 from .entity import DataT, HandlerT, UnifiEntity, UnifiEntityDescription
+
+SubscriptionT = Callable[[CallbackType, ItemEvent], UnsubscribeType]
 
 CLIENT_BLOCKED = (EventKey.WIRED_CLIENT_BLOCKED, EventKey.WIRELESS_CLIENT_BLOCKED)
 CLIENT_UNBLOCKED = (EventKey.WIRED_CLIENT_UNBLOCKED, EventKey.WIRELESS_CLIENT_UNBLOCKED)
@@ -168,6 +169,7 @@ class UnifiSwitchEntityDescription(
 ):
     """Class describing UniFi switch entity."""
 
+    custom_subscribe: Callable[[aiounifi.Controller], SubscriptionT] | None = None
     only_event_for_state_change: bool = False
 
 
@@ -190,7 +192,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiSwitchEntityDescription, ...] = (
         object_fn=lambda api, obj_id: api.clients[obj_id],
         only_event_for_state_change=True,
         supported_fn=lambda controller, obj_id: True,
-        unique_id_fn=lambda obj_id: f"block-{obj_id}",
+        unique_id_fn=lambda controller, obj_id: f"block-{obj_id}",
     ),
     UnifiSwitchEntityDescription[DPIRestrictionGroups, DPIRestrictionGroup](
         key="DPI restriction",
@@ -208,7 +210,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiSwitchEntityDescription, ...] = (
         name_fn=lambda group: group.name,
         object_fn=lambda api, obj_id: api.dpi_groups[obj_id],
         supported_fn=lambda c, obj_id: bool(c.api.dpi_groups[obj_id].dpiapp_ids),
-        unique_id_fn=lambda obj_id: obj_id,
+        unique_id_fn=lambda controller, obj_id: obj_id,
     ),
     UnifiSwitchEntityDescription[Outlets, Outlet](
         key="Outlet control",
@@ -225,7 +227,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiSwitchEntityDescription, ...] = (
         name_fn=lambda outlet: outlet.name,
         object_fn=lambda api, obj_id: api.outlets[obj_id],
         supported_fn=lambda c, obj_id: c.api.outlets[obj_id].has_relay,
-        unique_id_fn=lambda obj_id: f"{obj_id.split('_', 1)[0]}-outlet-{obj_id.split('_', 1)[1]}",
+        unique_id_fn=lambda controller, obj_id: f"{obj_id.split('_', 1)[0]}-outlet-{obj_id.split('_', 1)[1]}",
     ),
     UnifiSwitchEntityDescription[Ports, Port](
         key="PoE port control",
@@ -245,7 +247,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiSwitchEntityDescription, ...] = (
         name_fn=lambda port: f"{port.name} PoE",
         object_fn=lambda api, obj_id: api.ports[obj_id],
         supported_fn=lambda controller, obj_id: controller.api.ports[obj_id].port_poe,
-        unique_id_fn=lambda obj_id: f"{obj_id.split('_', 1)[0]}-poe-{obj_id.split('_', 1)[1]}",
+        unique_id_fn=lambda controller, obj_id: f"{obj_id.split('_', 1)[0]}-poe-{obj_id.split('_', 1)[1]}",
     ),
 )
 
@@ -355,3 +357,15 @@ class UnifiSwitchEntity(UnifiEntity[HandlerT, DataT], SwitchEntity):
             self._attr_is_on = event.key in description.event_is_on
         self._attr_available = description.available_fn(self.controller, self._obj_id)
         self.async_write_ha_state()
+
+    @callback
+    def async_custom_subscribe(self) -> None:
+        """Do custom subscriptions."""
+        description = self.entity_description
+
+        if description.custom_subscribe is not None:
+            self.async_on_remove(
+                description.custom_subscribe(self.controller.api)(
+                    self.async_signalling_callback, ItemEvent.CHANGED
+                ),
+            )

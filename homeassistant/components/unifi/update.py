@@ -95,7 +95,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiUpgradeEntityDescription, ...] = (
         object_fn=lambda api, obj_id: api.devices[obj_id],
         state_fn=lambda api, device: device.state == 4,
         supported_fn=lambda controller, obj_id: True,
-        unique_id_fn=lambda obj_id: f"device_update-{obj_id}",
+        unique_id_fn=lambda controller, obj_id: f"device_update-{obj_id}",
     ),
 )
 

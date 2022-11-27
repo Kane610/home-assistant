@@ -101,7 +101,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiSensorEntityDescription, ...] = (
         name_fn=lambda _: "RX",
         object_fn=lambda api, obj_id: api.clients[obj_id],
         supported_fn=lambda controller, _: controller.option_allow_bandwidth_sensors,
-        unique_id_fn=lambda obj_id: f"rx-{obj_id}",
+        unique_id_fn=lambda controller, obj_id: f"rx-{obj_id}",
         value_fn=async_client_rx_value_fn,
     ),
     UnifiSensorEntityDescription[Clients, Client](
@@ -118,7 +118,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiSensorEntityDescription, ...] = (
         name_fn=lambda _: "TX",
         object_fn=lambda api, obj_id: api.clients[obj_id],
         supported_fn=lambda controller, _: controller.option_allow_bandwidth_sensors,
-        unique_id_fn=lambda obj_id: f"tx-{obj_id}",
+        unique_id_fn=lambda controller, obj_id: f"tx-{obj_id}",
         value_fn=async_client_tx_value_fn,
     ),
     UnifiSensorEntityDescription[Clients, Client](
@@ -135,7 +135,7 @@ ENTITY_DESCRIPTIONS: tuple[UnifiSensorEntityDescription, ...] = (
         name_fn=lambda client: "Uptime",
         object_fn=lambda api, obj_id: api.clients[obj_id],
         supported_fn=lambda controller, _: controller.option_allow_uptime_sensors,
-        unique_id_fn=lambda obj_id: f"uptime-{obj_id}",
+        unique_id_fn=lambda controller, obj_id: f"uptime-{obj_id}",
         value_fn=async_client_uptime_value_fn,
     ),
 )

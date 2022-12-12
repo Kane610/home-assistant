@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Generic
 
 import aiounifi
-from aiounifi.interfaces.api_handlers import CallbackType, ItemEvent, UnsubscribeType
+from aiounifi.interfaces.api_handlers import ItemEvent
 from aiounifi.interfaces.clients import Clients
 from aiounifi.interfaces.dpi_restriction_groups import DPIRestrictionGroups
 from aiounifi.interfaces.outlets import Outlets
@@ -45,9 +45,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import ATTR_MANUFACTURER, DOMAIN as UNIFI_DOMAIN
 from .controller import UniFiController
-from .entity import DataT, HandlerT, UnifiEntity, UnifiEntityDescription
-
-SubscriptionT = Callable[[CallbackType, ItemEvent], UnsubscribeType]
+from .entity import DataT, HandlerT, SubscriptionT, UnifiEntity, UnifiEntityDescription
 
 CLIENT_BLOCKED = (EventKey.WIRED_CLIENT_BLOCKED, EventKey.WIRELESS_CLIENT_BLOCKED)
 CLIENT_UNBLOCKED = (EventKey.WIRED_CLIENT_UNBLOCKED, EventKey.WIRELESS_CLIENT_UNBLOCKED)

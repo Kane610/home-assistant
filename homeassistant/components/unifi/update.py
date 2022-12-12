@@ -4,10 +4,10 @@ from __future__ import annotations
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 import logging
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import aiounifi
-from aiounifi.interfaces.api_handlers import CallbackType, ItemEvent, UnsubscribeType
+from aiounifi.interfaces.api_handlers import ItemEvent
 from aiounifi.interfaces.devices import Devices
 from aiounifi.models.device import Device, DeviceUpgradeRequest
 
@@ -24,12 +24,13 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import ATTR_MANUFACTURER, DOMAIN as UNIFI_DOMAIN
-from .entity import DataT, HandlerT, UnifiEntity, UnifiEntityDescription
+from .entity import SubscriptionT, UnifiEntity, UnifiEntityDescription
 
 if TYPE_CHECKING:
     from .controller import UniFiController
 
-Subscription = Callable[[CallbackType, ItemEvent], UnsubscribeType]
+_DataT = TypeVar("_DataT", bound=Device)
+_HandlerT = TypeVar("_HandlerT", bound=Devices)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,26 +62,26 @@ def async_device_device_info_fn(api: aiounifi.Controller, obj_id: str) -> Device
 
 
 @dataclass
-class UnifiEntityLoader(Generic[HandlerT, DataT]):
+class UnifiEntityLoader(Generic[_HandlerT, _DataT]):
     """Validate and load entities from different UniFi handlers."""
 
     control_fn: Callable[[aiounifi.Controller, str], Coroutine[Any, Any, None]]
-    state_fn: Callable[[aiounifi.Controller, DataT], bool]
+    state_fn: Callable[[aiounifi.Controller, _DataT], bool]
 
 
 @dataclass
-class UnifiUpgradeEntityDescription(
+class UnifiUpdateEntityDescription(
     UpdateEntityDescription,
-    UnifiEntityDescription[HandlerT, DataT],
-    UnifiEntityLoader[HandlerT, DataT],
+    UnifiEntityDescription[_HandlerT, _DataT],
+    UnifiEntityLoader[_HandlerT, _DataT],
 ):
     """Class describing UniFi update entity."""
 
-    custom_subscribe: Callable[[aiounifi.Controller], Subscription] | None = None
+    custom_subscribe: Callable[[aiounifi.Controller], SubscriptionT] | None = None
 
 
-ENTITY_DESCRIPTIONS: tuple[UnifiUpgradeEntityDescription, ...] = (
-    UnifiUpgradeEntityDescription[Devices, Device](
+ENTITY_DESCRIPTIONS: tuple[UnifiUpdateEntityDescription, ...] = (
+    UnifiUpdateEntityDescription[Devices, Device](
         key="Upgrade device",
         device_class=UpdateDeviceClass.FIRMWARE,
         has_entity_name=True,
@@ -109,7 +110,7 @@ async def async_setup_entry(
     controller: UniFiController = hass.data[UNIFI_DOMAIN][config_entry.entry_id]
 
     @callback
-    def async_load_entities(description: UnifiUpgradeEntityDescription) -> None:
+    def async_load_entities(description: UnifiUpdateEntityDescription) -> None:
         """Load and subscribe to UniFi devices."""
         entities: list[UpdateEntity] = []
         api_handler = description.api_handler_fn(controller.api)
@@ -138,10 +139,10 @@ async def async_setup_entry(
         async_load_entities(description)
 
 
-class UnifiDeviceUpdateEntity(UnifiEntity, UpdateEntity, Generic[HandlerT, DataT]):
+class UnifiDeviceUpdateEntity(UnifiEntity[_HandlerT, _DataT], UpdateEntity):
     """Representation of a UniFi device update entity."""
 
-    entity_description: UnifiEntityDescription[HandlerT, DataT]
+    entity_description: UnifiUpdateEntityDescription[_HandlerT, _DataT]
 
     @callback
     def async_initiate_state(self) -> None:
@@ -152,16 +153,12 @@ class UnifiDeviceUpdateEntity(UnifiEntity, UpdateEntity, Generic[HandlerT, DataT
         """
         obj_id = self._obj_id
         controller = self.controller
-        description = self.entity_description
 
         self._attr_supported_features = UpdateEntityFeature.PROGRESS
         if controller.site_role == "admin":
             self._attr_supported_features |= UpdateEntityFeature.INSTALL
 
-        obj = description.object_fn(self.controller.api, obj_id)
-        self._attr_in_progress = description.state_fn(controller.api, obj)
-        self._attr_installed_version = obj.version
-        self._attr_latest_version = obj.upgrade_to_firmware or obj.version
+        self.async_update_state(ItemEvent.ADDED, obj_id)
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any

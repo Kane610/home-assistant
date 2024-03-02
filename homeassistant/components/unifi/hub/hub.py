@@ -18,13 +18,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_time_interval
 import homeassistant.util.dt as dt_util
 
-from ..const import (
-    ATTR_MANUFACTURER,
-    CONF_SITE_ID,
-    DOMAIN as UNIFI_DOMAIN,
-    PLATFORMS,
-    UNIFI_WIRELESS_CLIENTS,
-)
+from ..const import ATTR_MANUFACTURER, CONF_SITE_ID, DOMAIN as UNIFI_DOMAIN, PLATFORMS
 from .config import UnifiConfig
 from .entity_loader import UnifiEntityLoader
 from .websocket import UnifiWebsocket
@@ -44,8 +38,6 @@ class UnifiHub:
         self.config = UnifiConfig.from_config_entry(config_entry)
         self.entity_loader = UnifiEntityLoader(self)
         self.websocket = UnifiWebsocket(hass, api, self.signal_reachable)
-
-        self.wireless_clients = hass.data[UNIFI_WIRELESS_CLIENTS]
 
         self.site = config_entry.data[CONF_SITE_ID]
         self.is_admin = False
@@ -85,15 +77,12 @@ class UnifiHub:
 
     async def initialize(self) -> None:
         """Set up a UniFi Network instance."""
-        await self.entity_loader.refresh_api_data()
-        self.entity_loader.restore_inactive_clients()
+        await self.entity_loader.initialize()
 
         assert self.config.entry.unique_id is not None
         self.is_admin = self.api.sites[self.config.entry.unique_id].role == "admin"
 
-        self.wireless_clients.update_clients(set(self.api.clients.values()))
-
-        self.config.entry.add_update_listener(self.async_config_entry_updated)
+        self.config_entry.add_update_listener(self.async_config_entry_updated)
 
         self._cancel_heartbeat_check = async_track_time_interval(
             self.hass, self._async_check_for_stale, CHECK_HEARTBEAT_INTERVAL

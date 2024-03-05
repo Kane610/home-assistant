@@ -82,7 +82,7 @@ class UnifiHub:
         assert self.config.entry.unique_id is not None
         self.is_admin = self.api.sites[self.config.entry.unique_id].role == "admin"
 
-        self.config_entry.add_update_listener(self.async_config_entry_updated)
+        self.config.entry.add_update_listener(self.async_config_entry_updated)
 
         self._cancel_heartbeat_check = async_track_time_interval(
             self.hass, self._async_check_for_stale, CHECK_HEARTBEAT_INTERVAL

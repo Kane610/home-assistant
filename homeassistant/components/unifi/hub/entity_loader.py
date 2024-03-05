@@ -142,12 +142,10 @@ class UnifiEntityLoader:
         def _add_unifi_entities() -> None:
             """Add UniFi entity."""
             async_add_entities(
-                [
-                    entity_class(obj_id, self.hub, description)
-                    for description in descriptions
-                    for obj_id in description.api_handler_fn(self.hub.api)
-                    if self._should_add_entity(description, obj_id)
-                ]
+                entity_class(obj_id, self.hub, description)
+                for description in descriptions
+                for obj_id in description.api_handler_fn(self.hub.api)
+                if self._should_add_entity(description, obj_id)
             )
 
         _add_unifi_entities()

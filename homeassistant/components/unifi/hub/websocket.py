@@ -15,7 +15,8 @@ from homeassistant.helpers.event import async_track_time_interval
 from ..const import LOGGER
 
 RETRY_TIMER = 15
-CHECK_WEBSOCKET_INTERVAL = timedelta(minutes=1)
+# CHECK_WEBSOCKET_INTERVAL = timedelta(minutes=1)
+CHECK_WEBSOCKET_INTERVAL = timedelta(seconds=5)
 
 
 class UnifiWebsocket:
@@ -97,6 +98,9 @@ class UnifiWebsocket:
     def reconnect(self, log: bool = False) -> None:
         """Prepare to reconnect UniFi session."""
 
+        if self.ws_task is not None:
+            self.ws_task.cancel()
+
         async def _reconnect() -> None:
             """Try to reconnect UniFi Network session."""
             try:
@@ -123,6 +127,10 @@ class UnifiWebsocket:
     @callback
     def _async_watch_websocket(self, now: datetime) -> None:
         """Watch timestamp for last received websocket message."""
+        print(
+            "Last received websocket timestamp:",
+            self.api.connectivity.ws_message_received,
+        )
         LOGGER.debug(
             "Last received websocket timestamp: %s",
             self.api.connectivity.ws_message_received,

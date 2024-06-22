@@ -1199,18 +1199,18 @@ WIRELESS_CLIENT = {
 @pytest.mark.parametrize(
     ("client_payload", "entity_id", "unique_id_prefix"),
     [
-        ([WIRED_CLIENT], "sensor.wired_client_rx", "rx-"),
-        ([WIRED_CLIENT], "sensor.wired_client_tx", "tx-"),
-        ([WIRED_CLIENT], "sensor.wired_client_uptime", "uptime-"),
-        ([WIRELESS_CLIENT], "sensor.wireless_client_rx", "rx-"),
-        ([WIRELESS_CLIENT], "sensor.wireless_client_tx", "tx-"),
-        ([WIRELESS_CLIENT], "sensor.wireless_client_uptime", "uptime-"),
+        ([WIRED_CLIENT], "wired_client_rx", "rx-"),
+        ([WIRED_CLIENT], "wired_client_tx", "tx-"),
+        ([WIRED_CLIENT], "wired_client_uptime", "uptime-"),
+        ([WIRELESS_CLIENT], "wireless_client_rx", "rx-"),
+        ([WIRELESS_CLIENT], "wireless_client_tx", "tx-"),
+        ([WIRELESS_CLIENT], "wireless_client_uptime", "uptime-"),
     ],
 )
 @pytest.mark.usefixtures("config_entry_setup")
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")
 @pytest.mark.freeze_time("2021-01-01 01:01:00")
-async def test_sensor_sources(
+async def test_sensor_source_client(
     hass: HomeAssistant,
     entity_registry: er.EntityRegistry,
     snapshot: SnapshotAssertion,
@@ -1218,17 +1218,7 @@ async def test_sensor_sources(
     unique_id_prefix: str,
 ) -> None:
     """Test sensor sources and the entity description."""
-    ent_reg_entry = entity_registry.async_get(entity_id)
-    assert ent_reg_entry.unique_id.startswith(unique_id_prefix)
-    assert ent_reg_entry.unique_id == snapshot
-    assert ent_reg_entry.entity_category == snapshot
-
-    state = hass.states.get(entity_id)
-    assert state.attributes.get(ATTR_DEVICE_CLASS) == snapshot
-    assert state.attributes.get(ATTR_FRIENDLY_NAME) == snapshot
-    assert state.attributes.get(ATTR_STATE_CLASS) == snapshot
-    assert state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == snapshot
-    assert state.state == snapshot
+    validate_entity_source(hass, entity_registry, snapshot, entity_id, unique_id_prefix)
 
 
 @pytest.mark.parametrize("config_entry_options", [{CONF_ALLOW_BANDWIDTH_SENSORS: True}])

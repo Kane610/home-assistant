@@ -125,6 +125,27 @@
 # name: test_sensor_source_client[client_payload5-wireless_client_uptime-uptime--config_entry_options0].6
   '2021-01-01T01:00:00+00:00'
 # ---
+# name: test_sensor_source_device[device_payload0-device_1_clients-device_clients--config_entry_options0]
+  'device_clients-10:00:00:00:01:01'
+# ---
+# name: test_sensor_source_device[device_payload0-device_1_clients-device_clients--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload0-device_1_clients-device_clients--config_entry_options0].2
+  None
+# ---
+# name: test_sensor_source_device[device_payload0-device_1_clients-device_clients--config_entry_options0].3
+  'Device 1 Clients'
+# ---
+# name: test_sensor_source_device[device_payload0-device_1_clients-device_clients--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload0-device_1_clients-device_clients--config_entry_options0].5
+  None
+# ---
+# name: test_sensor_source_device[device_payload0-device_1_clients-device_clients--config_entry_options0].6
+  '0'
+# ---
 # name: test_sensor_source_device[device_payload0-device_1_cpu_utilization-cpu_utilization--config_entry_options0]
   'cpu_utilization-10:00:00:00:01:01'
 # ---
@@ -144,6 +165,27 @@
   '%'
 # ---
 # name: test_sensor_source_device[device_payload0-device_1_cpu_utilization-cpu_utilization--config_entry_options0].6
+  '7.7'
+# ---
+# name: test_sensor_source_device[device_payload1-device_1_cpu_utilization-cpu_utilization--config_entry_options0]
+  'cpu_utilization-10:00:00:00:01:01'
+# ---
+# name: test_sensor_source_device[device_payload1-device_1_cpu_utilization-cpu_utilization--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload1-device_1_cpu_utilization-cpu_utilization--config_entry_options0].2
+  None
+# ---
+# name: test_sensor_source_device[device_payload1-device_1_cpu_utilization-cpu_utilization--config_entry_options0].3
+  'Device 1 CPU utilization'
+# ---
+# name: test_sensor_source_device[device_payload1-device_1_cpu_utilization-cpu_utilization--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload1-device_1_cpu_utilization-cpu_utilization--config_entry_options0].5
+  '%'
+# ---
+# name: test_sensor_source_device[device_payload1-device_1_cpu_utilization-cpu_utilization--config_entry_options0].6
   '7.7'
 # ---
 # name: test_sensor_source_device[device_payload1-device_1_memory_utilization-memory_utilization--config_entry_options0]
@@ -167,6 +209,27 @@
 # name: test_sensor_source_device[device_payload1-device_1_memory_utilization-memory_utilization--config_entry_options0].6
   '33.3'
 # ---
+# name: test_sensor_source_device[device_payload10-pdu_1_ac_power_budget-ac_power_budget--config_entry_options0]
+  'ac_power_budget-01:02:03:04:05:ff'
+# ---
+# name: test_sensor_source_device[device_payload10-pdu_1_ac_power_budget-ac_power_budget--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload10-pdu_1_ac_power_budget-ac_power_budget--config_entry_options0].2
+  'power'
+# ---
+# name: test_sensor_source_device[device_payload10-pdu_1_ac_power_budget-ac_power_budget--config_entry_options0].3
+  'PDU 1 AC Power Budget'
+# ---
+# name: test_sensor_source_device[device_payload10-pdu_1_ac_power_budget-ac_power_budget--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload10-pdu_1_ac_power_budget-ac_power_budget--config_entry_options0].5
+  <UnitOfPower.WATT: 'W'>
+# ---
+# name: test_sensor_source_device[device_payload10-pdu_1_ac_power_budget-ac_power_budget--config_entry_options0].6
+  '1875.000'
+# ---
 # name: test_sensor_source_device[device_payload10-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0]
   'ac_power_conumption-01:02:03:04:05:ff'
 # ---
@@ -188,6 +251,48 @@
 # name: test_sensor_source_device[device_payload10-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0].6
   '201.683'
 # ---
+# name: test_sensor_source_device[device_payload11-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0]
+  'ac_power_conumption-01:02:03:04:05:ff'
+# ---
+# name: test_sensor_source_device[device_payload11-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload11-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0].2
+  'power'
+# ---
+# name: test_sensor_source_device[device_payload11-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0].3
+  'PDU 1 AC Power Consumption'
+# ---
+# name: test_sensor_source_device[device_payload11-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload11-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0].5
+  <UnitOfPower.WATT: 'W'>
+# ---
+# name: test_sensor_source_device[device_payload11-pdu_1_ac_power_consumption-ac_power_conumption--config_entry_options0].6
+  '201.683'
+# ---
+# name: test_sensor_source_device[device_payload2-device_1_memory_utilization-memory_utilization--config_entry_options0]
+  'memory_utilization-10:00:00:00:01:01'
+# ---
+# name: test_sensor_source_device[device_payload2-device_1_memory_utilization-memory_utilization--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload2-device_1_memory_utilization-memory_utilization--config_entry_options0].2
+  None
+# ---
+# name: test_sensor_source_device[device_payload2-device_1_memory_utilization-memory_utilization--config_entry_options0].3
+  'Device 1 Memory utilization'
+# ---
+# name: test_sensor_source_device[device_payload2-device_1_memory_utilization-memory_utilization--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload2-device_1_memory_utilization-memory_utilization--config_entry_options0].5
+  '%'
+# ---
+# name: test_sensor_source_device[device_payload2-device_1_memory_utilization-memory_utilization--config_entry_options0].6
+  '33.3'
+# ---
 # name: test_sensor_source_device[device_payload2-device_1_port_1_poe_power-poe_power--config_entry_options0]
   'poe_power-10:00:00:00:01:01_1'
 # ---
@@ -207,6 +312,27 @@
   <UnitOfPower.WATT: 'W'>
 # ---
 # name: test_sensor_source_device[device_payload2-device_1_port_1_poe_power-poe_power--config_entry_options0].6
+  '2.56'
+# ---
+# name: test_sensor_source_device[device_payload3-device_1_port_1_poe_power-poe_power--config_entry_options0]
+  'poe_power-10:00:00:00:01:01_1'
+# ---
+# name: test_sensor_source_device[device_payload3-device_1_port_1_poe_power-poe_power--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload3-device_1_port_1_poe_power-poe_power--config_entry_options0].2
+  'power'
+# ---
+# name: test_sensor_source_device[device_payload3-device_1_port_1_poe_power-poe_power--config_entry_options0].3
+  'Device 1 Port 1 PoE Power'
+# ---
+# name: test_sensor_source_device[device_payload3-device_1_port_1_poe_power-poe_power--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload3-device_1_port_1_poe_power-poe_power--config_entry_options0].5
+  <UnitOfPower.WATT: 'W'>
+# ---
+# name: test_sensor_source_device[device_payload3-device_1_port_1_poe_power-poe_power--config_entry_options0].6
   '2.56'
 # ---
 # name: test_sensor_source_device[device_payload3-device_1_port_1_rx-port_rx--config_entry_options0]
@@ -230,6 +356,27 @@
 # name: test_sensor_source_device[device_payload3-device_1_port_1_rx-port_rx--config_entry_options0].6
   '27648.00000'
 # ---
+# name: test_sensor_source_device[device_payload4-device_1_port_1_rx-port_rx--config_entry_options0]
+  'port_rx-10:00:00:00:01:01_1'
+# ---
+# name: test_sensor_source_device[device_payload4-device_1_port_1_rx-port_rx--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload4-device_1_port_1_rx-port_rx--config_entry_options0].2
+  'data_rate'
+# ---
+# name: test_sensor_source_device[device_payload4-device_1_port_1_rx-port_rx--config_entry_options0].3
+  'Device 1 Port 1 RX'
+# ---
+# name: test_sensor_source_device[device_payload4-device_1_port_1_rx-port_rx--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload4-device_1_port_1_rx-port_rx--config_entry_options0].5
+  <UnitOfDataRate.MEGABITS_PER_SECOND: 'Mbit/s'>
+# ---
+# name: test_sensor_source_device[device_payload4-device_1_port_1_rx-port_rx--config_entry_options0].6
+  '27648.00000'
+# ---
 # name: test_sensor_source_device[device_payload4-device_1_port_1_tx-port_tx--config_entry_options0]
   'port_tx-10:00:00:00:01:01_1'
 # ---
@@ -249,6 +396,27 @@
   <UnitOfDataRate.MEGABITS_PER_SECOND: 'Mbit/s'>
 # ---
 # name: test_sensor_source_device[device_payload4-device_1_port_1_tx-port_tx--config_entry_options0].6
+  '63128.00000'
+# ---
+# name: test_sensor_source_device[device_payload5-device_1_port_1_tx-port_tx--config_entry_options0]
+  'port_tx-10:00:00:00:01:01_1'
+# ---
+# name: test_sensor_source_device[device_payload5-device_1_port_1_tx-port_tx--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload5-device_1_port_1_tx-port_tx--config_entry_options0].2
+  'data_rate'
+# ---
+# name: test_sensor_source_device[device_payload5-device_1_port_1_tx-port_tx--config_entry_options0].3
+  'Device 1 Port 1 TX'
+# ---
+# name: test_sensor_source_device[device_payload5-device_1_port_1_tx-port_tx--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload5-device_1_port_1_tx-port_tx--config_entry_options0].5
+  <UnitOfDataRate.MEGABITS_PER_SECOND: 'Mbit/s'>
+# ---
+# name: test_sensor_source_device[device_payload5-device_1_port_1_tx-port_tx--config_entry_options0].6
   '63128.00000'
 # ---
 # name: test_sensor_source_device[device_payload5-device_1_state-device_state--config_entry_options0]
@@ -272,6 +440,27 @@
 # name: test_sensor_source_device[device_payload5-device_1_state-device_state--config_entry_options0].6
   'Unknown'
 # ---
+# name: test_sensor_source_device[device_payload6-device_1_state-device_state--config_entry_options0]
+  'device_state-10:00:00:00:01:01'
+# ---
+# name: test_sensor_source_device[device_payload6-device_1_state-device_state--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload6-device_1_state-device_state--config_entry_options0].2
+  'enum'
+# ---
+# name: test_sensor_source_device[device_payload6-device_1_state-device_state--config_entry_options0].3
+  'Device 1 State'
+# ---
+# name: test_sensor_source_device[device_payload6-device_1_state-device_state--config_entry_options0].4
+  None
+# ---
+# name: test_sensor_source_device[device_payload6-device_1_state-device_state--config_entry_options0].5
+  None
+# ---
+# name: test_sensor_source_device[device_payload6-device_1_state-device_state--config_entry_options0].6
+  'Unknown'
+# ---
 # name: test_sensor_source_device[device_payload6-device_1_temperature-device_temperature--config_entry_options0]
   'device_temperature-10:00:00:00:01:01'
 # ---
@@ -293,6 +482,27 @@
 # name: test_sensor_source_device[device_payload6-device_1_temperature-device_temperature--config_entry_options0].6
   '60'
 # ---
+# name: test_sensor_source_device[device_payload7-device_1_temperature-device_temperature--config_entry_options0]
+  'device_temperature-10:00:00:00:01:01'
+# ---
+# name: test_sensor_source_device[device_payload7-device_1_temperature-device_temperature--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload7-device_1_temperature-device_temperature--config_entry_options0].2
+  'temperature'
+# ---
+# name: test_sensor_source_device[device_payload7-device_1_temperature-device_temperature--config_entry_options0].3
+  'Device 1 Temperature'
+# ---
+# name: test_sensor_source_device[device_payload7-device_1_temperature-device_temperature--config_entry_options0].4
+  None
+# ---
+# name: test_sensor_source_device[device_payload7-device_1_temperature-device_temperature--config_entry_options0].5
+  <UnitOfTemperature.CELSIUS: '°C'>
+# ---
+# name: test_sensor_source_device[device_payload7-device_1_temperature-device_temperature--config_entry_options0].6
+  '60'
+# ---
 # name: test_sensor_source_device[device_payload7-device_1_uptime-device_uptime--config_entry_options0]
   'device_uptime-10:00:00:00:01:01'
 # ---
@@ -312,6 +522,27 @@
   None
 # ---
 # name: test_sensor_source_device[device_payload7-device_1_uptime-device_uptime--config_entry_options0].6
+  'unknown'
+# ---
+# name: test_sensor_source_device[device_payload8-device_1_uptime-device_uptime--config_entry_options0]
+  'device_uptime-10:00:00:00:01:01'
+# ---
+# name: test_sensor_source_device[device_payload8-device_1_uptime-device_uptime--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload8-device_1_uptime-device_uptime--config_entry_options0].2
+  'timestamp'
+# ---
+# name: test_sensor_source_device[device_payload8-device_1_uptime-device_uptime--config_entry_options0].3
+  'Device 1 Uptime'
+# ---
+# name: test_sensor_source_device[device_payload8-device_1_uptime-device_uptime--config_entry_options0].4
+  None
+# ---
+# name: test_sensor_source_device[device_payload8-device_1_uptime-device_uptime--config_entry_options0].5
+  None
+# ---
+# name: test_sensor_source_device[device_payload8-device_1_uptime-device_uptime--config_entry_options0].6
   'unknown'
 # ---
 # name: test_sensor_source_device[device_payload8-pdu_1_outlet_2_outlet_power-outlet_power--config_entry_options0]
@@ -355,4 +586,25 @@
 # ---
 # name: test_sensor_source_device[device_payload9-pdu_1_ac_power_budget-ac_power_budget--config_entry_options0].6
   '1875.000'
+# ---
+# name: test_sensor_source_device[device_payload9-pdu_1_outlet_2_outlet_power-outlet_power--config_entry_options0]
+  'outlet_power-01:02:03:04:05:ff_2'
+# ---
+# name: test_sensor_source_device[device_payload9-pdu_1_outlet_2_outlet_power-outlet_power--config_entry_options0].1
+  <EntityCategory.DIAGNOSTIC: 'diagnostic'>
+# ---
+# name: test_sensor_source_device[device_payload9-pdu_1_outlet_2_outlet_power-outlet_power--config_entry_options0].2
+  'power'
+# ---
+# name: test_sensor_source_device[device_payload9-pdu_1_outlet_2_outlet_power-outlet_power--config_entry_options0].3
+  'PDU 1 Outlet 2 Outlet Power'
+# ---
+# name: test_sensor_source_device[device_payload9-pdu_1_outlet_2_outlet_power-outlet_power--config_entry_options0].4
+  <SensorStateClass.MEASUREMENT: 'measurement'>
+# ---
+# name: test_sensor_source_device[device_payload9-pdu_1_outlet_2_outlet_power-outlet_power--config_entry_options0].5
+  <UnitOfPower.WATT: 'W'>
+# ---
+# name: test_sensor_source_device[device_payload9-pdu_1_outlet_2_outlet_power-outlet_power--config_entry_options0].6
+  '73.827'
 # ---

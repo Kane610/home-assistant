@@ -1067,7 +1067,7 @@ async def test_device_client_sensors(
     mock_websocket_message,
     client_payload,
 ) -> None:
-    """Verify that WLAN client sensors are working as expected."""
+    """Verify that device client sensors are working as expected."""
     client_payload += [
         {
             "hostname": "Wired client 1",
@@ -1101,13 +1101,9 @@ async def test_device_client_sensors(
 
     ent_reg_entry = entity_registry.async_get("sensor.wired_device_clients")
     assert ent_reg_entry.disabled_by == RegistryEntryDisabler.INTEGRATION
-    assert ent_reg_entry.entity_category is EntityCategory.DIAGNOSTIC
-    assert ent_reg_entry.unique_id == "device_clients-01:00:00:00:00:00"
 
     ent_reg_entry = entity_registry.async_get("sensor.wireless_device_clients")
     assert ent_reg_entry.disabled_by == RegistryEntryDisabler.INTEGRATION
-    assert ent_reg_entry.entity_category is EntityCategory.DIAGNOSTIC
-    assert ent_reg_entry.unique_id == "device_clients-02:00:00:00:00:00"
 
     # Enable entity
     entity_registry.async_update_entity(
@@ -1225,6 +1221,7 @@ async def test_sensor_source_client(
 @pytest.mark.parametrize(
     ("device_payload", "entity_id", "unique_id_prefix"),
     [
+        ([DEVICE_1], "device_1_clients", "device_clients-"),
         ([DEVICE_1], "device_1_cpu_utilization", "cpu_utilization-"),
         ([DEVICE_1], "device_1_memory_utilization", "memory_utilization-"),
         ([DEVICE_1], "device_1_port_1_poe_power", "poe_power-"),

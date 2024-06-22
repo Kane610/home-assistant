@@ -35,6 +35,7 @@ from homeassistant.const import (
     ATTR_FRIENDLY_NAME,
     ATTR_UNIT_OF_MEASUREMENT,
     STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
     EntityCategory,
 )
 from homeassistant.core import HomeAssistant
@@ -114,6 +115,7 @@ DEVICE_1 = {
     "state": 1,
     "system-stats": {"cpu": 5.8, "mem": 31.1, "uptime": 7316},
     "type": "usw",
+    "uptime": 60,
     "version": "4.0.42.10433",
 }
 
@@ -855,31 +857,7 @@ async def test_outlet_power_readings(
         assert sensor_data.state == expected_update_value
 
 
-@pytest.mark.parametrize(
-    "device_payload",
-    [
-        [
-            {
-                "board_rev": 3,
-                "device_id": "mock-id",
-                "has_fan": True,
-                "fan_level": 0,
-                "ip": "10.0.1.1",
-                "last_seen": 1562600145,
-                "mac": "00:00:00:00:01:01",
-                "model": "US16P150",
-                "name": "Device",
-                "next_interval": 20,
-                "overheating": True,
-                "state": 1,
-                "type": "usw",
-                "upgradable": True,
-                "uptime": 60,
-                "version": "4.0.42.10433",
-            }
-        ]
-    ],
-)
+@pytest.mark.parametrize("device_payload", [[DEVICE_1]])
 async def test_device_uptime(
     hass: HomeAssistant,
     mock_websocket_message,
@@ -890,18 +868,22 @@ async def test_device_uptime(
     now = datetime(2021, 1, 1, 1, 1, 0, tzinfo=dt_util.UTC)
     with patch("homeassistant.util.dt.now", return_value=now):
         await config_entry_factory()
-    assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 2
-    assert hass.states.get("sensor.device_uptime").state == "2021-01-01T01:00:00+00:00"
+    assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 5
+    assert (
+        hass.states.get("sensor.device_1_uptime").state == "2021-01-01T01:00:00+00:00"
+    )
 
     # Verify normal new event doesn't change uptime
     # 4 seconds has passed
-    device = device_payload[0]
+    device = deepcopy(device_payload[0])
     device["uptime"] = 64
     now = datetime(2021, 1, 1, 1, 1, 4, tzinfo=dt_util.UTC)
     with patch("homeassistant.util.dt.now", return_value=now):
         mock_websocket_message(message=MessageKey.DEVICE, data=device)
 
-    assert hass.states.get("sensor.device_uptime").state == "2021-01-01T01:00:00+00:00"
+    assert (
+        hass.states.get("sensor.device_1_uptime").state == "2021-01-01T01:00:00+00:00"
+    )
 
     # Verify new event change uptime
     # 1 month has passed
@@ -911,7 +893,9 @@ async def test_device_uptime(
     with patch("homeassistant.util.dt.now", return_value=now):
         mock_websocket_message(message=MessageKey.DEVICE, data=device)
 
-    assert hass.states.get("sensor.device_uptime").state == "2021-02-01T01:00:00+00:00"
+    assert (
+        hass.states.get("sensor.device_1_uptime").state == "2021-02-01T01:00:00+00:00"
+    )
 
 
 @pytest.mark.parametrize("device_payload", [[DEVICE_1]])
@@ -926,7 +910,7 @@ async def test_device_temperature(
     assert hass.states.get("sensor.device_1_temperature").state == "30"
 
     # Verify new event change temperature
-    device = device_payload[0]
+    device = deepcopy(device_payload[0])
     device["general_temperature"] = 60
     mock_websocket_message(message=MessageKey.DEVICE, data=device)
     assert hass.states.get("sensor.device_1_temperature").state == "60"
@@ -942,7 +926,7 @@ async def test_device_state(
     """Verify that state sensors are working as expected."""
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 5
 
-    device = device_payload[0]
+    device = deepcopy(device_payload[0])
     for i in list(map(int, DeviceState)):
         device["state"] = i
         mock_websocket_message(message=MessageKey.DEVICE, data=device)
@@ -963,7 +947,7 @@ async def test_device_system_stats(
     assert hass.states.get("sensor.device_1_memory_utilization").state == "31.1"
 
     # Verify new event change system-stats
-    device = device_payload[0]
+    device = deepcopy(device_payload[0])
     device["system-stats"] = {"cpu": 7.7, "mem": 33.3, "uptime": 7316}
     mock_websocket_message(message=MessageKey.DEVICE, data=device)
 
@@ -1013,7 +997,7 @@ async def test_bandwidth_port_sensors(
     assert hass.states.get("sensor.device_1_port_1_tx").state == "0.04089"
 
     # Verify state update
-    device_1 = device_payload[0]
+    device_1 = deepcopy(device_payload[0])
     device_1["port_table"][0]["rx_bytes-r"] = 3456000000
     device_1["port_table"][0]["tx_bytes-r"] = 7891000000
 
@@ -1159,6 +1143,7 @@ def validate_entity_source(
     assert state.attributes.get(ATTR_STATE_CLASS) == snapshot
     assert state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == snapshot
     assert state.state == snapshot
+    assert state.state != STATE_UNKNOWN
 
 
 WIRED_CLIENT = {

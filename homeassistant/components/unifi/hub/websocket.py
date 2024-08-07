@@ -70,6 +70,11 @@ class UnifiWebsocket:
                     self.ws_task,
                 )
 
+    async def stop_and_reconnect(self) -> None:
+        """Stop websocket handler and try to reconnect."""
+        await self.stop_and_wait()
+        self.reconnect()
+
     @callback
     def start_websocket(self) -> None:
         """Start up connection to websocket."""
@@ -127,3 +132,8 @@ class UnifiWebsocket:
             "Last received websocket timestamp: %s",
             self.api.connectivity.ws_message_received,
         )
+        if not self.api.connectivity.ws_message_received:
+            return
+        delta = now - self.api.connectivity.ws_message_received
+        if delta.seconds > 300:
+            self.hass.loop.create_task(self.stop_and_reconnect())

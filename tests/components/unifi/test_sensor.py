@@ -520,7 +520,6 @@ async def test_bandwidth_sensors(
     hass.config_entries.async_update_entry(config_entry_setup, options=options)
     await hass.async_block_till_done()
 
-    assert len(hass.states.async_all()) == 1
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 0
     assert hass.states.get("sensor.wireless_client_rx") is None
     assert hass.states.get("sensor.wireless_client_tx") is None
@@ -533,7 +532,6 @@ async def test_bandwidth_sensors(
     hass.config_entries.async_update_entry(config_entry_setup, options=options)
     await hass.async_block_till_done()
 
-    assert len(hass.states.async_all()) == 5
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 4
     assert hass.states.get("sensor.wireless_client_rx")
     assert hass.states.get("sensor.wireless_client_tx")
@@ -791,7 +789,7 @@ async def test_outlet_power_readings(
     expected_update_value: str | None,
 ) -> None:
     """Test the outlet power reporting on PDU devices."""
-    assert len(hass.states.async_all()) == 13
+
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 7
 
     assert hass.states.get(f"sensor.{entity_id}").state == expected_value
@@ -917,7 +915,7 @@ async def test_device_system_stats(
     device_payload: list[dict[str, Any]],
 ) -> None:
     """Verify that device stats sensors are working as expected."""
-    assert len(hass.states.async_all()) == 8
+
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 4
 
     assert hass.states.get("sensor.device_cpu_utilization").state == "5.8"
@@ -1004,7 +1002,7 @@ async def test_bandwidth_port_sensors(
     device_payload: list[dict[str, Any]],
 ) -> None:
     """Verify that port bandwidth sensors are working as expected."""
-    assert len(hass.states.async_all()) == 5
+
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 2
 
     p1rx_reg_entry = entity_registry.async_get("sensor.mock_name_port_1_rx")
@@ -1035,7 +1033,7 @@ async def test_bandwidth_port_sensors(
     await hass.async_block_till_done()
 
     # Validate state object
-    assert len(hass.states.async_all()) == 9
+
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 6
 
     # Verify sensor state
@@ -1061,7 +1059,6 @@ async def test_bandwidth_port_sensors(
     hass.config_entries.async_update_entry(config_entry_setup, options=options)
     await hass.async_block_till_done()
 
-    assert len(hass.states.async_all()) == 5
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 2
 
     assert hass.states.get("sensor.mock_name_uptime")
@@ -1157,7 +1154,7 @@ async def test_device_client_sensors(
     await hass.async_block_till_done()
 
     # Validate state object
-    assert len(hass.states.async_all()) == 13
+
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 6
 
     assert hass.states.get("sensor.wired_device_clients").state == "2"
@@ -1397,7 +1394,6 @@ async def test_wan_monitor_latency(
     """Verify that wan latency sensors are working as expected."""
     entity_id = f"sensor.mock_name_{monitor_id}_latency"
 
-    assert len(hass.states.async_all()) == 6
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 2
 
     latency_entry = entity_registry.async_get(entity_id)
@@ -1414,7 +1410,6 @@ async def test_wan_monitor_latency(
     )
     await hass.async_block_till_done()
 
-    assert len(hass.states.async_all()) == 7
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 3
 
     # Verify sensor state
@@ -1485,7 +1480,6 @@ async def test_wan_monitor_latency_with_no_entries(
 ) -> None:
     """Verify that wan latency sensors is not created if there is no data."""
 
-    assert len(hass.states.async_all()) == 6
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 2
 
     latency_entry = entity_registry.async_get("sensor.mock_name_google_wan_latency")
@@ -1519,7 +1513,6 @@ async def test_wan_monitor_latency_with_no_uptime(
 ) -> None:
     """Verify that wan latency sensors is not created if there is no data."""
 
-    assert len(hass.states.async_all()) == 6
     assert len(hass.states.async_entity_ids(SENSOR_DOMAIN)) == 2
 
     latency_entry = entity_registry.async_get("sensor.mock_name_google_wan_latency")

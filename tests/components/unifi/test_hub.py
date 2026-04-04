@@ -8,7 +8,7 @@ from unittest.mock import patch
 import aiounifi
 import pytest
 
-from homeassistant.components.unifi.const import DOMAIN
+from homeassistant.components.unifi.const import CONF_POLLING, DOMAIN
 from homeassistant.components.unifi.errors import AuthenticationRequired, CannotConnect
 from homeassistant.components.unifi.hub import get_unifi_api
 from homeassistant.config_entries import ConfigEntryState
@@ -54,6 +54,48 @@ async def test_hub_setup(
     )
 
     assert device_entry.sw_version == "7.4.162"
+
+
+@pytest.mark.parametrize("config_entry_options", [{CONF_POLLING: True}])
+async def test_hub_setup_does_not_start_websocket_in_polling_mode(
+    config_entry_factory: ConfigEntryFactoryType,
+) -> None:
+    """Ensure websocket is not started when polling mode is enabled."""
+    with patch(
+        "homeassistant.components.unifi.hub.hub.UnifiWebsocket.start"
+    ) as websocket_start:
+        await config_entry_factory()
+
+    websocket_start.assert_not_called()
+
+
+async def test_polling_option_update_manages_websocket_lifecycle(
+    hass: HomeAssistant,
+    config_entry_setup: MockConfigEntry,
+) -> None:
+    """Start/stop websocket when polling option is toggled."""
+    with (
+        patch(
+            "homeassistant.components.unifi.hub.hub.UnifiWebsocket.stop"
+        ) as websocket_stop,
+        patch(
+            "homeassistant.components.unifi.hub.hub.UnifiWebsocket.start"
+        ) as websocket_start,
+    ):
+        hass.config_entries.async_update_entry(
+            config_entry_setup, options={CONF_POLLING: True}
+        )
+        await hass.async_block_till_done()
+
+        websocket_stop.assert_called_once()
+        websocket_start.assert_not_called()
+
+        hass.config_entries.async_update_entry(
+            config_entry_setup, options={CONF_POLLING: False}
+        )
+        await hass.async_block_till_done()
+
+        websocket_start.assert_called_once()
 
 
 async def test_reset_after_successful_setup(

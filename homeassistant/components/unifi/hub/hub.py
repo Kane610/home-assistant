@@ -53,7 +53,12 @@ class UnifiHub:
 
     @property
     def available(self) -> bool:
-        """Websocket connection state."""
+        """Connection state used by entities.
+
+        Polling mode does not depend on websocket status.
+        """
+        if self.config.option_polling:
+            return True
         return self.websocket.available
 
     @property
@@ -87,6 +92,20 @@ class UnifiHub:
     def signal_options_update(self) -> str:
         """Event specific per UniFi entry to signal new options."""
         return f"unifi-options-{self.config.entry.entry_id}"
+
+    @callback
+    def apply_connection_mode(self) -> None:
+        """Apply runtime connectivity behavior based on polling option.
+
+        Polling mode: websocket is stopped and coordinators poll for updates.
+        Websocket mode: websocket is started and websocket-capable coordinators
+        consume pushed updates.
+        """
+        if self.config.option_polling:
+            self.websocket.stop()
+            return
+
+        self.websocket.start()
 
     async def initialize(self) -> None:
         """Set up a UniFi Network instance."""
@@ -136,6 +155,8 @@ class UnifiHub:
         the entry might already have been reset and thus is not available.
         """
         hub = config_entry.runtime_data
+        was_polling = hub.config.option_polling
+
         check_keys = {
             CONF_HOST: "host",
             CONF_PORT: "port",
@@ -156,8 +177,13 @@ class UnifiHub:
             if config_entry.data[key] != getattr(hub.config, value):
                 hass.config_entries.async_schedule_reload(config_entry.entry_id)
                 return
-
         hub.config = UnifiConfig.from_config_entry(config_entry)
+
+        hub.apply_connection_mode()
+
+        if was_polling != hub.config.option_polling:
+            async_dispatcher_send(hass, hub.signal_reachable)
+
         async_dispatcher_send(hass, hub.signal_options_update)
 
     @callback

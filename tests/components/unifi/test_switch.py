@@ -1329,9 +1329,8 @@ async def test_firewall_policies(
         {"entity_id": "switch.unifi_network_allow_internal_to_iot"},
         blocking=True,
     )
-    # Updating the value for firewall policies will make another call
-    # to retrieve the values
-    assert aioclient_mock.call_count == call_count + 2
+    # Firewall policy control triggers an internal policy update and a coordinator refresh.
+    assert aioclient_mock.call_count == call_count + 3
     expected_disable_call = deepcopy(firewall_policy)
     expected_disable_call["enabled"] = False
 

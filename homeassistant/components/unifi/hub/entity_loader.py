@@ -34,23 +34,21 @@ class UnifiEntityLoader:
     def __init__(self, hub: UnifiHub) -> None:
         """Initialize the UniFi entity loader."""
         self.hub = hub
-        self.api_updaters = (
-            hub.api.clients.update,
+        self._startup_only_api_updaters = (
             hub.api.clients_all.update,
-            hub.api.devices.update,
-            hub.api.dpi_apps.update,
-            hub.api.dpi_groups.update,
-            hub.api.port_forwarding.update,
             hub.api.sites.update,
             hub.api.system_information.update,
-            hub.api.firewall_policies.update,
-            hub.api.wlans.update,
         )
         self.wireless_clients = hub.hass.data[UNIFI_WIRELESS_CLIENTS]
 
         self._data_coordinators: dict[int, UnifiDataUpdateCoordinator] = {
             id(hub.api.clients): UnifiDataUpdateCoordinator(hub, hub.api.clients),
+            id(hub.api.devices): UnifiDataUpdateCoordinator(hub, hub.api.devices),
+            id(hub.api.dpi_apps): UnifiDataUpdateCoordinator(hub, hub.api.dpi_apps),
             id(hub.api.dpi_groups): UnifiDataUpdateCoordinator(hub, hub.api.dpi_groups),
+            id(hub.api.firewall_policies): UnifiDataUpdateCoordinator(
+                hub, hub.api.firewall_policies
+            ),
             id(hub.api.port_forwarding): UnifiDataUpdateCoordinator(
                 hub, hub.api.port_forwarding
             ),
@@ -80,14 +78,11 @@ class UnifiEntityLoader:
     async def initialize(self) -> None:
         """Initialize API data and extra client support."""
         await asyncio.gather(
-            self._refresh_api_data(),
+            self._refresh_data(self._startup_only_api_updaters),
             self._refresh_data(
                 [
                     coordinator.async_refresh
-                    for coordinator in (
-                        self._data_coordinators[id(self.hub.api.traffic_rules)],
-                        self._data_coordinators[id(self.hub.api.traffic_routes)],
-                    )
+                    for coordinator in self._data_coordinators.values()
                 ]
             ),
         )
@@ -104,10 +99,6 @@ class UnifiEntityLoader:
         for result in results:
             if result is not None:
                 LOGGER.warning("Exception on update %s", result)
-
-    async def _refresh_api_data(self) -> None:
-        """Refresh API data from network application."""
-        await self._refresh_data(self.api_updaters)
 
     @callback
     def _restore_inactive_clients(self) -> None:

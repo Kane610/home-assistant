@@ -51,6 +51,19 @@ class UnifiDataUpdateCoordinator[HandlerT: APIHandler](DataUpdateCoordinator[Non
         """Return the aiounifi handler managed by this coordinator."""
         return self._handler
 
+    @property
+    def _is_websocket_mode(self) -> bool:
+        """Return if websocket updates are active for this coordinator."""
+        return self.update_interval is None
+
+    async def async_request_refresh_after_control(self) -> None:
+        """Refresh after a control call when polling is in use.
+
+        In websocket mode, state updates are expected to arrive via pushed events.
+        """
+        if not self._is_websocket_mode:
+            await self.async_request_refresh()
+
     @callback
     def _update_mode(self) -> None:
         """Update websocket/polling mode based on hub configuration."""

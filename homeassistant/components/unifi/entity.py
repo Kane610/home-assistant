@@ -252,6 +252,13 @@ class UnifiEntity[HandlerT: APIHandler, ItemT: ApiItem](Entity):
         """Update state if polling is configured."""
         self.async_update_state(ItemEvent.CHANGED, self._obj_id)
 
+    async def async_refresh_after_control(self) -> None:
+        """Refresh handler data after a control call, if coordinator-managed."""
+        if coordinator := self.hub.entity_loader.get_data_update_coordinator(
+            self.entity_description.api_handler_fn(self.api)
+        ):
+            await coordinator.async_request_refresh_after_control()
+
     @callback
     def async_initiate_state(self) -> None:
         """Initiate entity state.

@@ -184,6 +184,7 @@
               "detection_time": "Time in seconds from last seen until considered away",
               "dpi_restrictions": "Allow control of DPI restriction groups",
               "ignore_wired_bug": "Disable UniFi Network wired bug logic",
+              "polling": "Use polling updates",
               "ssid_filter": "Select SSIDs to track wireless clients on",
               "track_wired_clients": "Include wired network clients"
             },

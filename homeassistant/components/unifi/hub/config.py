@@ -22,6 +22,7 @@ from ..const import (
     CONF_DETECTION_TIME,
     CONF_DPI_RESTRICTIONS,
     CONF_IGNORE_WIRED_BUG,
+    CONF_POLLING,
     CONF_SITE_ID,
     CONF_SSID_FILTER,
     CONF_TRACK_CLIENTS,
@@ -32,6 +33,7 @@ from ..const import (
     DEFAULT_DETECTION_TIME,
     DEFAULT_DPI_RESTRICTIONS,
     DEFAULT_IGNORE_WIRED_BUG,
+    DEFAULT_POLLING,
     DEFAULT_TRACK_CLIENTS,
     DEFAULT_TRACK_DEVICES,
     DEFAULT_TRACK_WIRED_CLIENTS,
@@ -82,6 +84,8 @@ class UnifiConfig:
     """Config entry option to allow bandwidth sensors."""
     option_allow_uptime_sensors: bool
     """Config entry option to allow uptime sensors."""
+    option_polling: bool
+    """Config entry option controlling polling for coordinator updates."""
 
     @classmethod
     def from_config_entry(cls, config_entry: ConfigEntry) -> Self:
@@ -119,4 +123,5 @@ class UnifiConfig:
             option_allow_uptime_sensors=options.get(
                 CONF_ALLOW_UPTIME_SENSORS, DEFAULT_ALLOW_UPTIME_SENSORS
             ),
+            option_polling=options.get(CONF_POLLING, DEFAULT_POLLING),
         )

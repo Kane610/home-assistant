@@ -18,6 +18,7 @@ from homeassistant.components.switch import (
 from homeassistant.components.unifi.const import (
     CONF_BLOCK_CLIENT,
     CONF_DPI_RESTRICTIONS,
+    CONF_POLLING,
     CONF_SITE_ID,
     CONF_TRACK_CLIENTS,
     CONF_TRACK_DEVICES,
@@ -1670,6 +1671,39 @@ async def test_wlan_switches(
     )
     assert aioclient_mock.call_count == 2
     assert aioclient_mock.mock_calls[1][2] == {"enabled": True}
+
+
+@pytest.mark.parametrize("config_entry_options", [{CONF_POLLING: True}])
+@pytest.mark.parametrize("wlan_payload", [[WLAN]])
+async def test_wlan_switches_without_websocket(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    config_entry_setup: MockConfigEntry,
+    wlan_payload: list[dict[str, Any]],
+) -> None:
+    """Test WLAN control refreshes by polling when websocket updates are disabled."""
+    wlan = wlan_payload[0]
+
+    aioclient_mock.clear_requests()
+    aioclient_mock.put(
+        f"https://{config_entry_setup.data[CONF_HOST]}:1234"
+        f"/api/s/{config_entry_setup.data[CONF_SITE_ID]}/rest/wlanconf/{wlan['_id']}",
+    )
+    aioclient_mock.get(
+        f"https://{config_entry_setup.data[CONF_HOST]}:1234"
+        f"/api/s/{config_entry_setup.data[CONF_SITE_ID]}/rest/wlanconf",
+        json={"meta": {"rc": "OK"}, "data": [wlan]},
+    )
+
+    await hass.services.async_call(
+        SWITCH_DOMAIN,
+        "turn_off",
+        {"entity_id": "switch.ssid_1"},
+        blocking=True,
+    )
+
+    # One call for control and one for coordinator polling refresh.
+    assert aioclient_mock.call_count == 2
 
 
 @pytest.mark.parametrize("port_forward_payload", [[PORT_FORWARD_PLEX]])

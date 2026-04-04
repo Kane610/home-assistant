@@ -45,12 +45,14 @@ from .const import (
     CONF_DPI_RESTRICTIONS,
     CONF_IGNORE_WIRED_BUG,
     CONF_MORE_OPTIONS,
+    CONF_POLLING,
     CONF_SITE_ID,
     CONF_SSID_FILTER,
     CONF_TRACK_CLIENTS,
     CONF_TRACK_DEVICES,
     CONF_TRACK_WIRED_CLIENTS,
     DEFAULT_DPI_RESTRICTIONS,
+    DEFAULT_POLLING,
     DOMAIN,
 )
 from .errors import AuthenticationRequired, CannotConnect
@@ -365,6 +367,15 @@ class UnifiOptionsFlowHandler(OptionsFlow):
                                 vol.Optional(
                                     CONF_ALLOW_UPTIME_SENSORS,
                                     default=self.hub.config.option_allow_uptime_sensors,
+                                ): bool,
+                            }
+                        ),
+                                vol.Optional(
+                                    CONF_POLLING,
+                                    default=self.options.get(
+                                        CONF_POLLING,
+                                        DEFAULT_POLLING,
+                                    ),
                                 ): bool,
                             }
                         ),

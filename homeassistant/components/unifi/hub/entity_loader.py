@@ -48,15 +48,21 @@ class UnifiEntityLoader:
         )
         self.wireless_clients = hub.hass.data[UNIFI_WIRELESS_CLIENTS]
 
-        self._polling_coordinators: dict[int, UnifiDataUpdateCoordinator] = {
+        self._data_coordinators: dict[int, UnifiDataUpdateCoordinator] = {
+            id(hub.api.clients): UnifiDataUpdateCoordinator(hub, hub.api.clients),
+            id(hub.api.dpi_groups): UnifiDataUpdateCoordinator(hub, hub.api.dpi_groups),
+            id(hub.api.port_forwarding): UnifiDataUpdateCoordinator(
+                hub, hub.api.port_forwarding
+            ),
             id(hub.api.traffic_rules): UnifiDataUpdateCoordinator(
                 hub, hub.api.traffic_rules
             ),
             id(hub.api.traffic_routes): UnifiDataUpdateCoordinator(
                 hub, hub.api.traffic_routes
             ),
+            id(hub.api.wlans): UnifiDataUpdateCoordinator(hub, hub.api.wlans),
         }
-        for coordinator in self._polling_coordinators.values():
+        for coordinator in self._data_coordinators.values():
             coordinator.async_add_listener(lambda: None)
 
         self.platforms: list[
@@ -78,7 +84,10 @@ class UnifiEntityLoader:
             self._refresh_data(
                 [
                     coordinator.async_refresh
-                    for coordinator in self._polling_coordinators.values()
+                    for coordinator in (
+                        self._data_coordinators[id(self.hub.api.traffic_rules)],
+                        self._data_coordinators[id(self.hub.api.traffic_routes)],
+                    )
                 ]
             ),
         )
@@ -162,7 +171,7 @@ class UnifiEntityLoader:
         self, handler: APIHandler
     ) -> UnifiDataUpdateCoordinator | None:
         """Return the polling coordinator for a handler, if available."""
-        return self._polling_coordinators.get(id(handler))
+        return self._data_coordinators.get(id(handler))
 
     @callback
     def _load_entities(

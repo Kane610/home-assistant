@@ -16,6 +16,7 @@ from homeassistant.components.unifi.const import (
     CONF_DPI_RESTRICTIONS,
     CONF_IGNORE_WIRED_BUG,
     CONF_MORE_OPTIONS,
+    CONF_POLLING,
     CONF_SITE_ID,
     CONF_SSID_FILTER,
     CONF_TRACK_CLIENTS,
@@ -421,7 +422,9 @@ async def test_option_flow(
         CONF_BLOCK_CLIENT: [CLIENTS[0]["mac"]],
         CONF_ALLOW_BANDWIDTH_SENSORS: True,
         CONF_ALLOW_UPTIME_SENSORS: True,
+        CONF_POLLING: False,
     }
+
 
 
 async def test_discover_unifi_positive(hass: HomeAssistant) -> None:

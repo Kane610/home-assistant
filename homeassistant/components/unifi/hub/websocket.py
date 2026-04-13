@@ -89,7 +89,10 @@ class UnifiWebsocket:
             self.available = True
             async_dispatcher_send(self.hass, self.signal)
 
-        self.ws_task = self.hass.loop.create_task(_websocket_runner())
+        self.ws_task = self.hass.async_create_background_task(
+            _websocket_runner(),
+            f"unifi websocket {self.api.connectivity.config.host}",
+        )
 
     @callback
     def reconnect(self, log: bool = False) -> None:
@@ -116,7 +119,10 @@ class UnifiWebsocket:
         if log:
             LOGGER.info("Will try to reconnect to UniFi Network")
 
-        self.hass.loop.create_task(_reconnect())
+        self.hass.async_create_background_task(
+            _reconnect(),
+            f"unifi reconnect {self.api.connectivity.config.host}",
+        )
 
     @callback
     def _async_watch_websocket(self, now: datetime) -> None:

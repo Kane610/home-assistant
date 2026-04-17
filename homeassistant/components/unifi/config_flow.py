@@ -52,7 +52,6 @@ from .const import (
     CONF_TRACK_DEVICES,
     CONF_TRACK_WIRED_CLIENTS,
     DEFAULT_DPI_RESTRICTIONS,
-    DEFAULT_POLLING,
     DOMAIN,
 )
 from .errors import AuthenticationRequired, CannotConnect

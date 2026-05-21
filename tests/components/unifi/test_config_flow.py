@@ -1,12 +1,12 @@
 """Test UniFi Network config flow."""
 
+import importlib
 import socket
 from unittest.mock import PropertyMock, patch
 
 import pytest
 
 from homeassistant import config_entries
-from homeassistant.components.unifi.config_flow import _async_discover_unifi
 from homeassistant.components.unifi.const import (
     CONF_ALLOW_BANDWIDTH_SENSORS,
     CONF_ALLOW_UPTIME_SENSORS,
@@ -426,17 +426,18 @@ async def test_option_flow(
     }
 
 
-
 async def test_discover_unifi_positive(hass: HomeAssistant) -> None:
     """Verify positive run of UniFi discovery."""
+    config_flow = importlib.import_module("homeassistant.components.unifi.config_flow")
     with patch("socket.gethostbyname", return_value="192.168.1.1"):
-        assert await _async_discover_unifi(hass) == "192.168.1.1"
+        assert await config_flow._async_discover_unifi(hass) == "192.168.1.1"
 
 
 async def test_discover_unifi_negative(hass: HomeAssistant) -> None:
     """Verify negative run of UniFi discovery."""
+    config_flow = importlib.import_module("homeassistant.components.unifi.config_flow")
     with patch("socket.gethostbyname", side_effect=socket.gaierror):
-        assert await _async_discover_unifi(hass) is None
+        assert await config_flow._async_discover_unifi(hass) is None
 
 
 INTEGRATION_DISCOVERY_INFO = {

@@ -6,7 +6,7 @@ import logging
 from types import MappingProxyType
 from typing import Any
 from unittest import mock
-from unittest.mock import ANY, Mock, call, patch
+from unittest.mock import ANY, MagicMock, Mock, call, patch
 
 import axis as axislib
 import pytest
@@ -198,14 +198,71 @@ async def test_shutdown(config_entry_data: MappingProxyType[str, Any]) -> None:
     hass = Mock()
     entry = Mock()
     entry.data = config_entry_data
+    entry.unique_id = FORMATTED_MAC
 
     mock_api = Mock()
-    mock_api.vapix.serial_number = FORMATTED_MAC
+    mock_api.vapix.basic_device_info = MagicMock(initialized=True)
+    mock_api.vapix.basic_device_info.__getitem__.return_value = Mock(
+        firmware_version="9.80.1",
+        product_type="Network Camera",
+        serial_number=FORMATTED_MAC,
+    )
+    mock_api.vapix.params.property_handler = Mock(initialized=False)
+    mock_api.vapix.params.brand_handler = Mock(initialized=False)
     axis_device = axis.hub.AxisHub(hass, entry, mock_api)
 
     await axis_device.shutdown(None)
 
     assert len(axis_device.api.stream.stop.mock_calls) == 1
+
+
+def test_hub_resolve_values_from_params_fallback(
+    config_entry_data: MappingProxyType[str, Any],
+) -> None:
+    """Resolve hub values from params handlers when basic device info is missing."""
+    hass = Mock()
+    entry = Mock()
+    entry.data = config_entry_data
+    entry.unique_id = FORMATTED_MAC
+
+    mock_api = Mock()
+    mock_api.vapix.basic_device_info = Mock(initialized=False)
+    mock_api.vapix.params.property_handler = MagicMock(initialized=True)
+    mock_api.vapix.params.property_handler.__getitem__.return_value = Mock(
+        firmware_version="10.0.0",
+        system_serial_number=MAC,
+    )
+    mock_api.vapix.params.brand_handler = MagicMock(initialized=True)
+    mock_api.vapix.params.brand_handler.__getitem__.return_value = Mock(
+        product_type="Axis Fallback Type"
+    )
+
+    hub = axis.hub.AxisHub(hass, entry, mock_api)
+
+    assert hub.fw_version == "10.0.0"
+    assert hub.product_type == "Axis Fallback Type"
+    assert hub.unique_id == FORMATTED_MAC
+
+
+def test_hub_unique_id_fallback_to_config_entry_unique_id(
+    config_entry_data: MappingProxyType[str, Any],
+) -> None:
+    """Fallback to config entry unique ID when no serial sources are available."""
+    hass = Mock()
+    entry = Mock()
+    entry.data = config_entry_data
+    entry.unique_id = FORMATTED_MAC
+
+    mock_api = Mock()
+    mock_api.vapix.basic_device_info = Mock(initialized=False)
+    mock_api.vapix.params.property_handler = Mock(initialized=False)
+    mock_api.vapix.params.brand_handler = Mock(initialized=False)
+
+    hub = axis.hub.AxisHub(hass, entry, mock_api)
+
+    assert hub.fw_version == ""
+    assert hub.product_type == ""
+    assert hub.unique_id == FORMATTED_MAC
 
 
 @pytest.mark.parametrize(

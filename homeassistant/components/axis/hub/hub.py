@@ -31,11 +31,51 @@ class AxisHub:
         self.event_source = AxisEventSource(hass, config_entry, api)
         self.api = api
 
-        self.fw_version = api.vapix.firmware_version
-        self.product_type = api.vapix.product_type
-        self.unique_id = format_mac(api.vapix.serial_number)
+        self.fw_version = self._resolve_firmware_version()
+        self.product_type = self._resolve_product_type()
+        self.unique_id = self._resolve_unique_id()
 
         self.additional_diagnostics: dict[str, Any] = {}
+
+    def _resolve_firmware_version(self) -> str:
+        """Resolve firmware version from available VAPIX sources."""
+        if self.api.vapix.basic_device_info.initialized:
+            return self.api.vapix.basic_device_info["0"].firmware_version
+
+        if self.api.vapix.params.property_handler.initialized:
+            return self.api.vapix.params.property_handler["0"].firmware_version
+
+        return ""
+
+    def _resolve_product_type(self) -> str:
+        """Resolve product type from available VAPIX sources."""
+        if self.api.vapix.basic_device_info.initialized:
+            return self.api.vapix.basic_device_info["0"].product_type
+
+        if self.api.vapix.params.brand_handler.initialized:
+            return self.api.vapix.params.brand_handler["0"].product_type
+
+        return ""
+
+    def _resolve_serial_number(self) -> str:
+        """Resolve serial number from available VAPIX sources."""
+        if self.api.vapix.basic_device_info.initialized:
+            return self.api.vapix.basic_device_info["0"].serial_number
+
+        if self.api.vapix.params.property_handler.initialized:
+            return self.api.vapix.params.property_handler["0"].system_serial_number
+
+        return ""
+
+    def _resolve_unique_id(self) -> str:
+        """Resolve unique ID from serial number with config entry fallback."""
+        if serial_number := self._resolve_serial_number():
+            return format_mac(serial_number)
+
+        if entry_unique_id := self.config.entry.unique_id:
+            return format_mac(entry_unique_id)
+
+        return ""
 
     @property
     def available(self) -> bool:

@@ -122,6 +122,11 @@ ENTITY_DESCRIPTIONS = (
         event_topic=EventTopic.DAY_NIGHT_VISION,
     ),
     AxisBinarySensorDescription(
+        key="Intercom door state",
+        device_class=BinarySensorDeviceClass.DOOR,
+        event_topic=EventTopic.INTERCOM_DOOR_STATE,
+    ),
+    AxisBinarySensorDescription(
         key="Sound trigger state",
         device_class=BinarySensorDeviceClass.SOUND,
         event_topic=EventTopic.SOUND_TRIGGER_LEVEL,

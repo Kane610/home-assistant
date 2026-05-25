@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 TOPIC_TO_EVENT_TYPE = {
     EventTopic.DAY_NIGHT_VISION: "DayNight",
     EventTopic.FENCE_GUARD: "Fence Guard",
+    EventTopic.INTERCOM_DOOR_STATE: "Intercom door state",
     EventTopic.LIGHT_STATUS: "Light",
     EventTopic.LOITERING_GUARD: "Loitering Guard",
     EventTopic.MOTION_DETECTION: "Motion",
